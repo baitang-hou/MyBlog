@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="个人理解视觉SLAM十四讲在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。第一，二讲不得不说看完第一二讲的书本来感觉挺简单的，后来看了视频才发现不然，还是那句话，动手实操才是让理智脑控制引导情绪脑和本能脑的最有效方法，下面开始记录。 开篇便狠狠提及了数学">
+<meta property="og:type" content="article">
+<meta property="og:title" content="个人理解视觉SLAM十四讲">
+<meta property="og:url" content="http://example.com/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/index.html">
+<meta property="og:site_name" content="革Mean君">
+<meta property="og:description" content="个人理解视觉SLAM十四讲在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。第一，二讲不得不说看完第一二讲的书本来感觉挺简单的，后来看了视频才发现不然，还是那句话，动手实操才是让理智脑控制引导情绪脑和本能脑的最有效方法，下面开始记录。 开篇便狠狠提及了数学">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/653e1c6c447c4d178dc877e85074a4a3.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/7afde4003543423a9bcee20a9174d6fa.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/af3ac9514fc943fe9f6f02e7566a4ef7.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/3eccc616b21d439cb789c05cd1dec605.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/56be24aa7b76473190a41e957f18686c.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/794eca3e3a70481fb7e67e109a16ecc5.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/3a57578135e945b98bae1eea77bd340a.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/c3d3ba29251447a894d62937d8aa648c.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/6ea7e7f9f7d5451fadf1f22bcd975d8f.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/88eb93cbe06740ad859681804654294a.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/c7ebc2df8b034343befa7cda9817264a.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/c77d27e474b84c0782c0bbbf5480ec8c.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="article:published_time" content="2023-10-15T08:16:51.700Z">
+<meta property="article:modified_time" content="2022-02-22T02:52:48.000Z">
+<meta property="article:author" content="Hou-baitang">
+<meta property="article:tag" content="i don t know">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/653e1c6c447c4d178dc877e85074a4a3.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
+
+<link rel="canonical" href="http://example.com/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>个人理解视觉SLAM十四讲 | 革Mean君</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">革Mean君</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">我的个人博客，用来记录学习过程以及心得等有意义的事情  有问题可以联系2914360094@qq.com</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">0</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">0</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">12</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/01.jpg">
+      <meta itemprop="name" content="Hou-baitang">
+      <meta itemprop="description" content="用于记录学习生活，成为一个自己想要成为的人">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="革Mean君">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          个人理解视觉SLAM十四讲
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-10-15 16:16:51" itemprop="dateCreated datePublished" datetime="2023-10-15T16:16:51+08:00">2023-10-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-22 10:52:48" itemprop="dateModified" datetime="2022-02-22T10:52:48+08:00">2022-02-22</time>
+              </span>
+
+          
+            <span id="/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/" class="post-meta-item leancloud_visitors" data-flag-title="个人理解视觉SLAM十四讲" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="个人理解视觉SLAM十四讲"><a href="#个人理解视觉SLAM十四讲" class="headerlink" title="个人理解视觉SLAM十四讲"></a>个人理解视觉SLAM十四讲</h1><h3 id="在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。"><a href="#在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。" class="headerlink" title="在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。"></a>在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。</h3><h2 id="第一，二讲"><a href="#第一，二讲" class="headerlink" title="第一，二讲"></a>第一，二讲</h2><p><code>不得不说看完第一二讲的书本来感觉挺简单的，后来看了视频才发现不然，还是那句话，动手实操才是让理智脑控制引导情绪脑和本能脑的最有效方法，下面开始记录。</code></p>
+<p>开篇便狠狠提及了数学的重要性，虽然我实操过有关摄像头的一些处理，但是放到现在看来就是小巫见大巫了。基本的数学知识必须具备，再不济也得了解会用呀，尤其是<em><strong>高数，线代，矩阵论，概率</strong></em>。好吧我承认我说了句（<del>屁话</del>）金玉良言，但是数学的作用在今后遇到的各种被称之为魔法的科学实现效果上，都是不可磨灭甚至说注入了灵魂一般的存在，<del>本人的数学算是中等水平,但还需要继续学矩阵论</del>至少在目前来说是如此。</p>
+<p>除了基本的知识以外其实还有很多想说的，等后续有机会在闲扯。既然下了决心要走这条&#x3D;&#x3D;不归路&#x3D;&#x3D;那么就意味着我已经做好了直面李群李代数这些刚让我翻开目录就发愁的专业名词，更不要说有关高斯的一些知识了。闲谈这么多也可以看出来这两讲的内容相对来说还是易于理解的呢。但是，我还是有一些问题，在此记录一下：</p>
+<blockquote>
+<p>1，运动方程和观测方程到底具体到实际当中应当怎样解决什么样的问题。</p>
+<p>2，有关线性代数和矩阵论的知识就比如矩阵论没学过，这就需要我复习加学习数学基础。</p>
+<p>3，我们主要是学习具体到一种相机还是三种相机的处理都要学，还是只学习思路在仿真中实操？想必作为一个初学者的我还是有很多的疑惑的，即使自己有过了解，但怎么都感觉自己了解了个寂寞……</p>
+</blockquote>
+<p>所以说，在挥剑的时候一定要将剑打磨锋利，准备是必不可少的，一切都是如此，保证万无一失的情况下尚且还会出错，这也是我从一位同学身上学到并实践的真理。</p>
+<p>下面是一些自己的理解：</p>
+<blockquote>
+<p>运动方程就是解决位姿的问题，根据系统的输入和噪声以及上一次得到的位置来计算本次位置，算是一种预测吧？&#x3D;&#x3D;这种运动方程会增加机器人定位的不确定性，至少对于以滤波为主的SLAM模型来说是这样&#x3D;&#x3D;</p>
+</blockquote>
+<blockquote>
+<p>观测方程通过对环境当中的路标初始化方程，根据观测到的路标的信息产生一个观测值（样本值，我理解的是一个样本对应的观测是唯一确定的），同样，这个方程里面也会有噪声的影响，方程应由当前位置和路标位置，加上噪声作为输入得到观测值，也就意味着观测值同时受路标和机器人当前位置的影响，但目前来说我的理解还是较为模糊的一个概念，后面学习到更多再加以完善。</p>
+</blockquote>
+<hr>
+<p>date: 2022.01.23</p>
+<hr>
+<h2 id="关于数学"><a href="#关于数学" class="headerlink" title="关于数学"></a>关于数学</h2><p>数学当中涉及到的知识还是非常重要的，不管是从应用层面来说还是从理解上来说都是很值得推敲的。</p>
+<h4 id="基本问题-如何计算同一个相量在不同坐标系里面的坐标"><a href="#基本问题-如何计算同一个相量在不同坐标系里面的坐标" class="headerlink" title="基本问题 -&gt; 如何计算同一个相量在不同坐标系里面的坐标"></a>基本问题 -&gt; 如何计算同一个相量在不同坐标系里面的坐标</h4><ul>
+<li>SLAM 中定义世界坐标系Tw与机器人坐标系Tr 一个点的世界坐标为Pw，机器人坐标为PR，那么满足关系PR&#x3D;TwrPw。在实际编程中，可使用Twr和Trw来描述机器人的位姿。</li>
+</ul>
+<h3 id="首先了解几个问题"><a href="#首先了解几个问题" class="headerlink" title="首先了解几个问题"></a>首先了解几个问题</h3><p>1，定位是什么？（下面举几个例子）</p>
+<p>​	利用环境中的传感器做全局定位（例如大雾天气飞机盲降）在这里面最出名的就是GPS，他的原理就是利用卫星广播的位置进行定位，根据光速与卫星的位置可以求出机器人的位置，在这里需要注意的是，机器人不向卫星请求数据，而是卫星只发送数据，一般采用4个卫星进行全局定位。</p>
+<p>​	UWV（无人机等地面设备），动作捕捉系统—-设置靶点，通过利用告诉相机进行同时捕捉</p>
+<p>地图—栅格地图（边缘粗糙，是概率模型）—传感器测得部分位置以概率的形式表示的地图。</p>
+<p>导航—路径规划</p>
+<p>​		—搜索算法—深度优选（数据大的时候没有优势）</p>
+<p>​							—广度优先</p>
+<p>传感器—单目相机（三角测距法）</p>
+<p>​			—双目相机（三角测距法）</p>
+<p>​			—深度相机（通过发射光源和捕捉，利用光栅原理）</p>
+<p>视觉里程计</p>
+<p>​	二维图片&lt;—&gt;三维信息</p>
+<p>后端优化</p>
+<p>​	滤波—粒子滤波器—利用贝叶斯公式</p>
+<p>​	回环检测</p>
+<h4 id="相机模型"><a href="#相机模型" class="headerlink" title="相机模型"></a>相机模型</h4><p>​	针孔相机模型：成像平面到像素平面，由物理成像平面变化为计算机的像素平面。由齐次坐标得到内参矩阵。</p>
+<p>相机标定：确定内参，外参，畸变参数，张正友法。L-M算法参数优化。</p>
+<hr>
+<p>date：2022.02.16</p>
+<hr>
+<h2 id="第三，四讲"><a href="#第三，四讲" class="headerlink" title="第三，四讲"></a>第三，四讲</h2><p>第三四讲涉及到的数学知识比较多，也可以说是几乎全是数学知识，为此花了整整两三个星期去弄这些，理解这些知识。其中的Eigen的例程也都很好理解，具体代码也跑通，课程后面有个关于使用pangolin绘制相机位置的一个代码由于自己操作原因直到现在才搞好，也是一种低级错误。关于make的一些报错比较烦，一时半会找不到具体的解决办法因为我发现同一个报错信息所反映出来的错误内容是不一样的，比如cmake执行正确make却有问题，我在网上搜了一下说是时间不同步导致的，之前也有说是安装gcc有问题版本什么的一些原因，结果排查了一遍都不是，然后就是我的解决方法，排查完上述内容之后，不能正确执行make，我首先到之前的可以执行cmake和make的文件（执行之后发现可以执行，并不是之前已经执行了的，毕竟我还没有那么蠢）发现是可以执行的，并且成功编译了文件，这样的话十有八九就是CMakeList文件编写有误，于是在我的几经改动之后便执行成功了。</p>
+<p><img src="https://img-blog.csdnimg.cn/653e1c6c447c4d178dc877e85074a4a3.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述">这个是编译执行之后的结果。<br>下面是我编译的过程，比较简单：<br><img src="https://img-blog.csdnimg.cn/7afde4003543423a9bcee20a9174d6fa.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"></p>
+<hr>
+<p>date: 2022.02.21</p>
+<hr>
+<h2 id="第四讲李群与李代数"><a href="#第四讲李群与李代数" class="headerlink" title="第四讲李群与李代数"></a>第四讲李群与李代数</h2><h4 id="useSophus-cpp文件部分"><a href="#useSophus-cpp文件部分" class="headerlink" title="useSophus.cpp文件部分"></a>useSophus.cpp文件部分</h4><p>首先展示一下我的CMakelist</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">cmake_minimum_required(VERSION 3.0)</span><br><span class="line">project(useSophus)</span><br><span class="line">add_compile_options(-std=c++11)</span><br><span class="line"></span><br><span class="line">set(CMAKE_BUILD_TYPE &quot;Release&quot;)</span><br><span class="line">set(Sophus_LIBRARIES  &quot;/usr/local/lib/libSophus.so&quot;)</span><br><span class="line"></span><br><span class="line"># 为使用 sophus，需要使用find_package命令找到它</span><br><span class="line"># include_directories(&quot;/usr/local/include/sophus&quot;)</span><br><span class="line">find_package(Sophus REQUIRED)</span><br><span class="line">include_directories( $&#123;Sophus_INCLUDE_DIRS&#125; )</span><br><span class="line"># Eigen</span><br><span class="line"># include_directories(&quot;/usr/include/eigen3&quot;)</span><br><span class="line">add_executable(useSophus useSophus.cpp)</span><br><span class="line"># target_link_libraries(useSophus Sophus::Sophus)</span><br><span class="line">target_link_libraries(useSophus $&#123;Sophus_LIBRARIES&#125;)</span><br><span class="line"># add_subdirectory(example)</span><br></pre></td></tr></table></figure>
+
+<p>然后是我遇到的问题：<br>关于Sophus下载的问题，首先需要知道的事是在书第87页有写着“本书的配套代码中使用的是带模板的Sophus库，所以说下载不用，编译即可”，但是下载也无妨，下面是步骤：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/strasdat/Sophus.git</span><br><span class="line">cd Sophus/</span><br><span class="line">git checkout a621ff</span><br><span class="line"></span><br><span class="line">mkdir build</span><br><span class="line">cd build</span><br><span class="line">cmake ..</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+
+<p>然后是很重要的一步，一般来说是可以解决一些路径问题的，就是安装这个库：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo make install</span><br></pre></td></tr></table></figure>
+
+<p>这样的话是可以顺利安装的<br>如果遇到了关于fmt的问题也不用慌，本身这个库和我们的CMakelist里面是需要fmt这个库的<br>所以下面是展示安装fmt库的方法，方法同安装Sophus，其实这些库的安装都是大同小异，只不过有些带模板的可以不选择安装，但是为了方便起见我个人选择安装：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git clone  https://github.com/fmtlib/fmt.git</span><br><span class="line">cmake .</span><br><span class="line">make &amp;&amp; make install </span><br></pre></td></tr></table></figure>
+
+<p>当然你也可以选择像我一样新建一个build文件单独make</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">git clone  https://github.com/fmtlib/fmt.git</span><br><span class="line">cd fmt</span><br><span class="line">mkdir build&amp;&amp;cd build</span><br><span class="line">cmake ..</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<p>到此为止可以解决关于库的几乎所有问题，然后就是对代码做调整：<br>首先来看usesophus.cpp这个文件<br><img src="https://img-blog.csdnimg.cn/af3ac9514fc943fe9f6f02e7566a4ef7.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"></p>
+<p>对于#include的部分来说，需要对引用的头文件分别包含so3和se3的两个文件，对于是后缀为.h还是.hpp需要自行验证，这个可以在&#x2F;usr&#x2F;local&#x2F;lib&#x2F;sophus文件里面看到是否含有。<br>然后就是对所有的SO3d和SE3d做出修改，因为最新的sophus的类里面只有SO3和SE3：<br><img src="https://img-blog.csdnimg.cn/3eccc616b21d439cb789c05cd1dec605.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/56be24aa7b76473190a41e957f18686c.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/794eca3e3a70481fb7e67e109a16ecc5.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/3a57578135e945b98bae1eea77bd340a.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"><br>修改完之后再进行make就没有什么问题了，最后在build文件里面生成useSophus文件运行结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">hbt@hbt:~/文档/slambook2/ch4/build$ ./useSophus </span><br><span class="line">SO(3) from matrix:</span><br><span class="line">2.22045e-16          -1           0</span><br><span class="line">          1 2.22045e-16           0</span><br><span class="line">          0           0           1</span><br><span class="line">SO(3) from quaternion:</span><br><span class="line">2.22045e-16          -1           0</span><br><span class="line">          1 2.22045e-16           0</span><br><span class="line">          0           0           1</span><br><span class="line">they are equal</span><br><span class="line">so3 =      0      0 1.5708</span><br><span class="line">so3 hat=</span><br><span class="line">      0 -1.5708       0</span><br><span class="line"> 1.5708       0      -0</span><br><span class="line">     -0       0       0</span><br><span class="line">so3 hat vee=      0      0 1.5708</span><br><span class="line">SO3 updated = </span><br><span class="line">          0          -1           0</span><br><span class="line">          1           0     -0.0001</span><br><span class="line">     0.0001 2.03288e-20           1</span><br><span class="line">*******************************</span><br><span class="line">SE3 from R,t= </span><br><span class="line">2.22045e-16          -1           0           1</span><br><span class="line">          1 2.22045e-16           0           0</span><br><span class="line">          0           0           1           0</span><br><span class="line">          0           0           0           1</span><br><span class="line">SE3 from q,t= </span><br><span class="line">2.22045e-16          -1           0           1</span><br><span class="line">          1 2.22045e-16           0           0</span><br><span class="line">          0           0           1           0</span><br><span class="line">          0           0           0           1</span><br><span class="line">se3 =  0.785398 -0.785398         0         0         0    1.5708</span><br><span class="line">se3 hat = </span><br><span class="line">        0   -1.5708         0  0.785398</span><br><span class="line">   1.5708         0        -0 -0.785398</span><br><span class="line">       -0         0         0         0</span><br><span class="line">        0         0         0         0</span><br><span class="line">se3 hat vee =  0.785398 -0.785398         0         0         0    1.5708</span><br><span class="line">SE3 updated = </span><br><span class="line">2.22045e-16          -1           0      1.0001</span><br><span class="line">          1 2.22045e-16           0           0</span><br><span class="line">          0           0           1           0</span><br><span class="line">          0           0           0           1</span><br></pre></td></tr></table></figure>
+
+<p>参考文章:<br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_41734114/article/details/110425061?ops_request_misc=&request_id=&biz_id=102&utm_term=/home/hbt/%E6%96%87%E6%A1%A3/slambook2/ch4/use&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-0-110425061.first_rank_v2_pc_rank_v29&spm=1018.2226.3001.4187">SLAM十四讲第二版ch4 useSophus报错</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/haxiongha/article/details/82464148?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522164541234616780271931788%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=164541234616780271931788&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduend~default-3-82464148.first_rank_v2_pc_rank_v29&utm_term=sophus%E5%8D%B8%E8%BD%BD&spm=1018.2226.3001.4187">ubuntu下安装Sophus库出现问题及解决办法</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/p942005405/article/details/119205390?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522164543918016780261910930%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fall.%2522%257D&request_id=164543918016780261910930&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~first_rank_ecpm_v1~rank_v31_ecpm-4-119205390.first_rank_v2_pc_rank_v29&utm_term=useSophus.cpp:(.text.startup+0xd4):+undefined+reference+to+%60Sophus::SO3::SO3(Eigen::Matrix%3Cdouble,+3,+3,+0,+3,+3%3E+const&)+/usr/bin/ld:+useSophus.cpp:(.text.startup+0xdf):+undefined+reference+to+%60Soph&spm=1018.2226.3001.4187">视觉slam14讲 Ubuntu18.04下 Sophus李代数库使用 以及报错处理</a></p>
+<hr>
+<p>date：2022.02.22</p>
+<hr>
+<h4 id="tarjectoryError-cpp文件部分"><a href="#tarjectoryError-cpp文件部分" class="headerlink" title="tarjectoryError.cpp文件部分"></a>tarjectoryError.cpp文件部分</h4><p>首先来看一下我的CMakelist文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">cmake_minimum_required(VERSION 3.0)</span><br><span class="line">project(trajectoryError)</span><br><span class="line"># 在cmake脚本中，设置编译选项可以通过add_compile_options命令，也可以通过set命令修改CMAKE_CXX_FLAGS或CMAKE_C_FLAGS。</span><br><span class="line"># add_compile_options(-std=c++11) # 这句话的意思是在make时让编译器（g++）自动添加C++11的性质 -&gt; 设置编译选项</span><br><span class="line"></span><br><span class="line">option(USE_UBUNTU_20 &quot;Set to ON if you are using Ubuntu 20.04&quot; ON)</span><br><span class="line">find_package(Pangolin REQUIRED)</span><br><span class="line">if(USE_UBUNTU_20)</span><br><span class="line">    message(&quot;You are using Ubuntu 20.04, fmt::fmt will be linked&quot;)</span><br><span class="line">    find_package(fmt REQUIRED)</span><br><span class="line">    set(FMT_LIBRARIES fmt::fmt)</span><br><span class="line">endif()</span><br><span class="line">include_directories($&#123;Pangolin_INCLUDE_DIRS&#125;)</span><br><span class="line">add_executable(trajectoryError trajectoryError.cpp)</span><br><span class="line">target_link_libraries(trajectoryError $&#123;FMT_LIBRARIES&#125;)</span><br><span class="line">target_link_libraries(trajectoryError $&#123;Pangolin_LIBRARIES&#125;)</span><br><span class="line"></span><br><span class="line">set(CMAKE_BUILD_TYPE &quot;Release&quot;)</span><br><span class="line">set(Sophus_LIBRARIES  &quot;/usr/local/lib/libSophus.so&quot;)</span><br><span class="line">find_package(Sophus REQUIRED)</span><br><span class="line">include_directories( $&#123;Sophus_INCLUDE_DIRS&#125; )</span><br><span class="line">target_link_libraries(trajectoryError $&#123;Sophus_LIBRARIES&#125;)</span><br></pre></td></tr></table></figure>
+<p>修改了cmakelist文件可以解决大部分的由于库链接出现问题所导致的报错。<br>然后再看一下代码的需要修改的地方：<br><img src="https://img-blog.csdnimg.cn/c3d3ba29251447a894d62937d8aa648c.png" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/6ea7e7f9f7d5451fadf1f22bcd975d8f.png" alt="请添加图片描述"><br>我们需要把头文件对应起来，原来的头文件需要与安装在本地（sophus支持带模板的，可以选择不安装）的文件名字对应，具体是后缀为.h还是.hpp需要根据自己的电脑对应起来。<br>修改完之后大部分的错误可以解决了。<br><img src="https://img-blog.csdnimg.cn/88eb93cbe06740ad859681804654294a.png" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/c7ebc2df8b034343befa7cda9817264a.png" alt="请添加图片描述"><br>如果cmake时遇到了这样的错误的话：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br><span class="line">372</span><br><span class="line">373</span><br><span class="line">374</span><br><span class="line">375</span><br><span class="line">376</span><br><span class="line">377</span><br><span class="line">378</span><br><span class="line">379</span><br><span class="line">380</span><br><span class="line">381</span><br><span class="line">382</span><br><span class="line">383</span><br><span class="line">384</span><br><span class="line">385</span><br><span class="line">386</span><br><span class="line">387</span><br><span class="line">388</span><br><span class="line">389</span><br><span class="line">390</span><br><span class="line">391</span><br><span class="line">392</span><br><span class="line">393</span><br><span class="line">394</span><br><span class="line">395</span><br><span class="line">396</span><br><span class="line">397</span><br><span class="line">398</span><br><span class="line">399</span><br><span class="line">400</span><br><span class="line">401</span><br><span class="line">402</span><br><span class="line">403</span><br><span class="line">404</span><br><span class="line">405</span><br><span class="line">406</span><br><span class="line">407</span><br><span class="line">408</span><br><span class="line">409</span><br><span class="line">410</span><br><span class="line">411</span><br><span class="line">412</span><br><span class="line">413</span><br><span class="line">414</span><br><span class="line">415</span><br><span class="line">416</span><br><span class="line">417</span><br><span class="line">418</span><br><span class="line">419</span><br><span class="line">420</span><br><span class="line">421</span><br><span class="line">422</span><br><span class="line">423</span><br><span class="line">424</span><br><span class="line">425</span><br><span class="line">426</span><br><span class="line">427</span><br><span class="line">428</span><br><span class="line">429</span><br><span class="line">430</span><br><span class="line">431</span><br><span class="line">432</span><br><span class="line">433</span><br><span class="line">434</span><br><span class="line">435</span><br><span class="line">436</span><br><span class="line">437</span><br><span class="line">438</span><br><span class="line">439</span><br><span class="line">440</span><br><span class="line">441</span><br><span class="line">442</span><br><span class="line">443</span><br><span class="line">444</span><br><span class="line">445</span><br><span class="line">446</span><br><span class="line">447</span><br><span class="line">448</span><br><span class="line">449</span><br><span class="line">450</span><br><span class="line">451</span><br><span class="line">452</span><br><span class="line">453</span><br><span class="line">454</span><br><span class="line">455</span><br><span class="line">456</span><br><span class="line">457</span><br><span class="line">458</span><br><span class="line">459</span><br><span class="line">460</span><br><span class="line">461</span><br><span class="line">462</span><br><span class="line">463</span><br><span class="line">464</span><br><span class="line">465</span><br><span class="line">466</span><br><span class="line">467</span><br><span class="line">468</span><br><span class="line">469</span><br><span class="line">470</span><br><span class="line">471</span><br><span class="line">472</span><br><span class="line">473</span><br><span class="line">474</span><br><span class="line">475</span><br><span class="line">476</span><br><span class="line">477</span><br><span class="line">478</span><br><span class="line">479</span><br><span class="line">480</span><br><span class="line">481</span><br><span class="line">482</span><br><span class="line">483</span><br><span class="line">484</span><br><span class="line">485</span><br><span class="line">486</span><br><span class="line">487</span><br><span class="line">488</span><br><span class="line">489</span><br><span class="line">490</span><br><span class="line">491</span><br><span class="line">492</span><br><span class="line">493</span><br><span class="line">494</span><br><span class="line">495</span><br><span class="line">496</span><br><span class="line">497</span><br><span class="line">498</span><br><span class="line">499</span><br><span class="line">500</span><br><span class="line">501</span><br><span class="line">502</span><br><span class="line">503</span><br><span class="line">504</span><br><span class="line">505</span><br><span class="line">506</span><br><span class="line">507</span><br><span class="line">508</span><br><span class="line">509</span><br><span class="line">510</span><br><span class="line">511</span><br><span class="line">512</span><br><span class="line">513</span><br><span class="line">514</span><br><span class="line">515</span><br><span class="line">516</span><br><span class="line">517</span><br><span class="line">518</span><br><span class="line">519</span><br><span class="line">520</span><br><span class="line">521</span><br><span class="line">522</span><br><span class="line">523</span><br><span class="line">524</span><br><span class="line">525</span><br><span class="line">526</span><br><span class="line">527</span><br><span class="line">528</span><br><span class="line">529</span><br><span class="line">530</span><br><span class="line">531</span><br><span class="line">532</span><br><span class="line">533</span><br><span class="line">534</span><br><span class="line">535</span><br><span class="line">536</span><br><span class="line">537</span><br><span class="line">538</span><br><span class="line">539</span><br><span class="line">540</span><br><span class="line">541</span><br><span class="line">542</span><br><span class="line">543</span><br><span class="line">544</span><br></pre></td><td class="code"><pre><span class="line">[ 50%] Building CXX object CMakeFiles/trajectoryError.dir/trajectoryError.cpp.o</span><br><span class="line">In file included from /usr/local/include/pangolin/utils/signal_slot.h:3,</span><br><span class="line">                 from /usr/local/include/pangolin/windowing/window.h:35,</span><br><span class="line">                 from /usr/local/include/pangolin/display/display.h:34,</span><br><span class="line">                 from /usr/local/include/pangolin/pangolin.h:38,</span><br><span class="line">                 from /home/hbt/文档/slambook2/ch4/example/trajectoryError.cpp:4:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:109:79: error: ‘decay_t’ is not a member of ‘std’; did you mean ‘decay’?</span><br><span class="line">  109 | constexpr bool is_weak_ptr_compatible_v = detail::is_weak_ptr_compatible&lt;std::decay_t&lt;P&gt;&gt;::value;</span><br><span class="line">      |                                                                               ^~~~~~~</span><br><span class="line">      |                                                                               decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:109:79: error: ‘decay_t’ is not a member of ‘std’; did you mean ‘decay’?</span><br><span class="line">  109 | constexpr bool is_weak_ptr_compatible_v = detail::is_weak_ptr_compatible&lt;std::decay_t&lt;P&gt;&gt;::value;</span><br><span class="line">      |                                                                               ^~~~~~~</span><br><span class="line">      |                                                                               decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:109:87: error: template argument 1 is invalid</span><br><span class="line">  109 | constexpr bool is_weak_ptr_compatible_v = detail::is_weak_ptr_compatible&lt;std::decay_t&lt;P&gt;&gt;::value;</span><br><span class="line">      |                                                                                       ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:109:92: error: ‘::value’ has not been declared</span><br><span class="line">  109 | constexpr bool is_weak_ptr_compatible_v = detail::is_weak_ptr_compatible&lt;std::decay_t&lt;P&gt;&gt;::value;</span><br><span class="line">      |                                                                                            ^~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:132:53: error: ‘remove_pointer_t’ is not a member of ‘std’; did you mean ‘remove_pointer’?</span><br><span class="line">  132 |                                                std::remove_pointer_t&lt;T&gt;&gt;::value;</span><br><span class="line">      |                                                     ^~~~~~~~~~~~~~~~</span><br><span class="line">      |                                                     remove_pointer</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:132:53: error: ‘remove_pointer_t’ is not a member of ‘std’; did you mean ‘remove_pointer’?</span><br><span class="line">  132 |                                                std::remove_pointer_t&lt;T&gt;&gt;::value;</span><br><span class="line">      |                                                     ^~~~~~~~~~~~~~~~</span><br><span class="line">      |                                                     remove_pointer</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:132:70: error: template argument 2 is invalid</span><br><span class="line">  132 |                                                std::remove_pointer_t&lt;T&gt;&gt;::value;</span><br><span class="line">      |                                                                      ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:132:75: error: ‘::value’ has not been declared</span><br><span class="line">  132 |                                                std::remove_pointer_t&lt;T&gt;&gt;::value;</span><br><span class="line">      |                                                                           ^~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:223:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  223 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:223:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  223 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:223:62: error: type/value mismatch at argument 2 in template parameter list for ‘template&lt;class T, class&gt; struct sigslot::detail::function_traits’</span><br><span class="line">  223 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                              ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:223:62: note:   expected a type, got ‘(&lt;expression error&gt; &lt; is_func_v&lt;T&gt;)’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:223:64: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  223 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:233:33: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  233 | struct function_traits&lt;T*, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                 ^~~~~~~~~~~</span><br><span class="line">      |                                 enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:233:33: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  233 | struct function_traits&lt;T*, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                 ^~~~~~~~~~~</span><br><span class="line">      |                                 enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:233:63: error: type/value mismatch at argument 2 in template parameter list for ‘template&lt;class T, class&gt; struct sigslot::detail::function_traits’</span><br><span class="line">  233 | struct function_traits&lt;T*, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                               ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:233:63: note:   expected a type, got ‘(&lt;expression error&gt; &lt; is_func_v&lt;T&gt;)’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:233:65: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  233 | struct function_traits&lt;T*, std::enable_if_t&lt;trait::is_func_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                 ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:243:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  243 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_pmf_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:243:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  243 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_pmf_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:243:61: error: type/value mismatch at argument 2 in template parameter list for ‘template&lt;class T, class&gt; struct sigslot::detail::function_traits’</span><br><span class="line">  243 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_pmf_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                             ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:243:61: note:   expected a type, got ‘(&lt;expression error&gt; &lt; is_pmf_v&lt;T&gt;)’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:243:63: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  243 | struct function_traits&lt;T, std::enable_if_t&lt;trait::is_pmf_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                               ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:254:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  254 | struct function_traits&lt;T, std::enable_if_t&lt;trait::has_call_operator_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:254:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  254 | struct function_traits&lt;T, std::enable_if_t&lt;trait::has_call_operator_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:254:72: error: type/value mismatch at argument 2 in template parameter list for ‘template&lt;class T, class&gt; struct sigslot::detail::function_traits’</span><br><span class="line">  254 | struct function_traits&lt;T, std::enable_if_t&lt;trait::has_call_operator_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                        ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:254:72: note:   expected a type, got ‘(&lt;expression error&gt; &lt; has_call_operator_v&lt;T&gt;)’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:254:74: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  254 | struct function_traits&lt;T, std::enable_if_t&lt;trait::has_call_operator_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                          ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In function ‘sigslot::detail::func_ptr sigslot::detail::get_function_ptr(const T&amp;)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:269:26: error: ‘decay_t’ is not a member of ‘std’; did you mean ‘decay’?</span><br><span class="line">  269 |     function_traits&lt;std::decay_t&lt;T&gt;&gt;::ptr(t, d);</span><br><span class="line">      |                          ^~~~~~~</span><br><span class="line">      |                          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:269:26: error: ‘decay_t’ is not a member of ‘std’; did you mean ‘decay’?</span><br><span class="line">  269 |     function_traits&lt;std::decay_t&lt;T&gt;&gt;::ptr(t, d);</span><br><span class="line">      |                          ^~~~~~~</span><br><span class="line">      |                          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:269:34: error: template argument 1 is invalid</span><br><span class="line">  269 |     function_traits&lt;std::decay_t&lt;T&gt;&gt;::ptr(t, d);</span><br><span class="line">      |                                  ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:269:35: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  269 |     function_traits&lt;std::decay_t&lt;T&gt;&gt;::ptr(t, d);</span><br><span class="line">      |                                   ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: At global scope:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:291:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  291 | struct object_pointer&lt;T*, std::enable_if_t&lt;trait::is_pointer_v&lt;T*&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:291:32: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  291 | struct object_pointer&lt;T*, std::enable_if_t&lt;trait::is_pointer_v&lt;T*&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                ^~~~~~~~~~~</span><br><span class="line">      |                                enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:291:66: error: type/value mismatch at argument 2 in template parameter list for ‘template&lt;class T, class&gt; struct sigslot::detail::object_pointer’</span><br><span class="line">  291 | struct object_pointer&lt;T*, std::enable_if_t&lt;trait::is_pointer_v&lt;T*&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                  ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:291:66: note:   expected a type, got ‘(&lt;expression error&gt; &lt; is_pointer_v&lt;T*&gt;)’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:291:68: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  291 | struct object_pointer&lt;T*, std::enable_if_t&lt;trait::is_pointer_v&lt;T*&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                    ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:298:31: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  298 | struct object_pointer&lt;T, std::enable_if_t&lt;trait::is_weak_ptr_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                               ^~~~~~~~~~~</span><br><span class="line">      |                               enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:298:31: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  298 | struct object_pointer&lt;T, std::enable_if_t&lt;trait::is_weak_ptr_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                               ^~~~~~~~~~~</span><br><span class="line">      |                               enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:298:65: error: type/value mismatch at argument 2 in template parameter list for ‘template&lt;class T, class&gt; struct sigslot::detail::object_pointer’</span><br><span class="line">  298 | struct object_pointer&lt;T, std::enable_if_t&lt;trait::is_weak_ptr_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                 ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:298:65: note:   expected a type, got ‘(&lt;expression error&gt; &lt; is_weak_ptr_v&lt;T&gt;)’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:298:67: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  298 | struct object_pointer&lt;T, std::enable_if_t&lt;trait::is_weak_ptr_v&lt;T&gt;&gt;&gt; &#123;</span><br><span class="line">      |                                                                   ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:306:31: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  306 | struct object_pointer&lt;T, std::enable_if_t&lt;!trait::is_pointer_v&lt;T&gt; &amp;&amp;</span><br><span class="line">      |                               ^~~~~~~~~~~</span><br><span class="line">      |                               enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:306:31: error: ‘enable_if_t’ is not a member of ‘std’; did you mean ‘enable_if’?</span><br><span class="line">  306 | struct object_pointer&lt;T, std::enable_if_t&lt;!trait::is_pointer_v&lt;T&gt; &amp;&amp;</span><br><span class="line">      |                               ^~~~~~~~~~~</span><br><span class="line">      |                               enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:308:76: error: type/value mismatch at argument 2 in template parameter list for ‘template&lt;class T, class&gt; struct sigslot::detail::object_pointer’</span><br><span class="line">  308 |                                           trait::is_weak_ptr_compatible_v&lt;T&gt;&gt;&gt;</span><br><span class="line">      |                                                                            ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:308:76: note:   expected a type, got ‘(((&lt;expression error&gt; &lt; (! is_pointer_v&lt;T&gt;)) &amp;&amp; (! is_weak_ptr_v&lt;T&gt;)) &amp;&amp; is_weak_ptr_compatible_v&lt;T&gt;)’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:308:78: error: expected unqualified-id before ‘&gt;’ token</span><br><span class="line">  308 |                                           trait::is_weak_ptr_compatible_v&lt;T&gt;&gt;&gt;</span><br><span class="line">      |                                                                              ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:398:41: error: ‘std::enable_if_t’ has not been declared</span><br><span class="line">  398 |     explicit copy_on_write(U &amp;&amp; x, std::enable_if_t&lt;!std::is_same&lt;std::decay_t&lt;U&gt;,</span><br><span class="line">      |                                         ^~~~~~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:398:52: error: expected ‘,’ or ‘...’ before ‘&lt;’ token</span><br><span class="line">  398 |     explicit copy_on_write(U &amp;&amp; x, std::enable_if_t&lt;!std::is_same&lt;std::decay_t&lt;U&gt;,</span><br><span class="line">      |                                                    ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:532:5: error: ‘index’ function uses ‘auto’ type specifier without trailing return type</span><br><span class="line">  532 |     auto index() const &#123;</span><br><span class="line">      |     ^~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:532:5: note: deduced return type only available with ‘-std=c++14’ or ‘-std=gnu++14’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:536:5: error: ‘index’ function uses ‘auto’ type specifier without trailing return type</span><br><span class="line">  536 |     auto&amp; index() &#123;</span><br><span class="line">      |     ^~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:536:5: note: deduced return type only available with ‘-std=c++14’ or ‘-std=gnu++14’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:793:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line">  793 |     std::enable_if_t&lt;function_traits&lt;C&gt;::must_check_object, bool&gt;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:799:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line">  799 |     std::enable_if_t&lt;!function_traits&lt;C&gt;::must_check_object, bool&gt;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:876:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line">  876 |     std::decay_t&lt;Func&gt; func;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In constructor ‘constexpr sigslot::detail::slot&lt;Func, Args&gt;::slot(sigslot::detail::cleanable&amp;, F&amp;&amp;, Gid)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:858:11: error: class ‘sigslot::detail::slot&lt;Func, Args&gt;’ does not have any field named ‘func’</span><br><span class="line">  858 |         , func&#123;std::forward&lt;F&gt;(f)&#125; &#123;&#125;</span><br><span class="line">      |           ^~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘sigslot::detail::func_ptr sigslot::detail::slot&lt;Func, Args&gt;::get_callable() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:866:33: error: ‘func’ was not declared in this scope; did you mean ‘Func’?</span><br><span class="line">  866 |         return get_function_ptr(func);</span><br><span class="line">      |                                 ^~~~</span><br><span class="line">      |                                 Func</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const std::type_info&amp; sigslot::detail::slot&lt;Func, Args&gt;::get_callable_type() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:871:23: error: ‘func’ was not declared in this scope; did you mean ‘Func’?</span><br><span class="line">  871 |         return typeid(func);</span><br><span class="line">      |                       ^~~~</span><br><span class="line">      |                       Func</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: At global scope:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:908:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line">  908 |     std::decay_t&lt;Func&gt; func;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In constructor ‘constexpr sigslot::detail::slot_extended&lt;Func, Args&gt;::slot_extended(sigslot::detail::cleanable&amp;, F&amp;&amp;, sigslot::group_id)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:888:11: error: class ‘sigslot::detail::slot_extended&lt;Func, Args&gt;’ does not have any field named ‘func’</span><br><span class="line">  888 |         , func&#123;std::forward&lt;F&gt;(f)&#125; &#123;&#125;</span><br><span class="line">      |           ^~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘sigslot::detail::func_ptr sigslot::detail::slot_extended&lt;Func, Args&gt;::get_callable() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:898:33: error: ‘func’ was not declared in this scope; did you mean ‘Func’?</span><br><span class="line">  898 |         return get_function_ptr(func);</span><br><span class="line">      |                                 ^~~~</span><br><span class="line">      |                                 Func</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const std::type_info&amp; sigslot::detail::slot_extended&lt;Func, Args&gt;::get_callable_type() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:903:23: error: ‘func’ was not declared in this scope; did you mean ‘Func’?</span><br><span class="line">  903 |         return typeid(func);</span><br><span class="line">      |                       ^~~~</span><br><span class="line">      |                       Func</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: At global scope:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:945:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line">  945 |     std::decay_t&lt;Pmf&gt; pmf;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:946:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line">  946 |     std::decay_t&lt;Ptr&gt; ptr;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In constructor ‘constexpr sigslot::detail::slot_pmf&lt;Pmf, Ptr, Args&gt;::slot_pmf(sigslot::detail::cleanable&amp;, F&amp;&amp;, P&amp;&amp;, sigslot::group_id)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:922:11: error: class ‘sigslot::detail::slot_pmf&lt;Pmf, Ptr, Args&gt;’ does not have any field named ‘pmf’</span><br><span class="line">  922 |         , pmf&#123;std::forward&lt;F&gt;(f)&#125;</span><br><span class="line">      |           ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:923:11: error: class ‘sigslot::detail::slot_pmf&lt;Pmf, Ptr, Args&gt;’ does not have any field named ‘ptr’</span><br><span class="line">  923 |         , ptr&#123;std::forward&lt;P&gt;(p)&#125; &#123;&#125;</span><br><span class="line">      |           ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::detail::slot_pmf&lt;Pmf, Ptr, Args&gt;::call_slot(Args ...)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:927:12: error: ‘ptr’ was not declared in this scope; did you mean ‘Ptr’?</span><br><span class="line">  927 |         ((*ptr).*pmf)(args...);</span><br><span class="line">      |            ^~~</span><br><span class="line">      |            Ptr</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:927:18: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line">  927 |         ((*ptr).*pmf)(args...);</span><br><span class="line">      |                  ^~~</span><br><span class="line">      |                  Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘sigslot::detail::func_ptr sigslot::detail::slot_pmf&lt;Pmf, Ptr, Args&gt;::get_callable() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:931:33: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line">  931 |         return get_function_ptr(pmf);</span><br><span class="line">      |                                 ^~~</span><br><span class="line">      |                                 Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const void* sigslot::detail::slot_pmf&lt;Pmf, Ptr, Args&gt;::get_object() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:935:31: error: ‘ptr’ was not declared in this scope; did you mean ‘Ptr’?</span><br><span class="line">  935 |         return get_object_ptr(ptr);</span><br><span class="line">      |                               ^~~</span><br><span class="line">      |                               Ptr</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const std::type_info&amp; sigslot::detail::slot_pmf&lt;Pmf, Ptr, Args&gt;::get_callable_type() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:940:23: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line">  940 |         return typeid(pmf);</span><br><span class="line">      |                       ^~~</span><br><span class="line">      |                       Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: At global scope:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:982:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line">  982 |     std::decay_t&lt;Pmf&gt; pmf;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:983:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line">  983 |     std::decay_t&lt;Ptr&gt; ptr;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In constructor ‘constexpr sigslot::detail::slot_pmf_extended&lt;Pmf, Ptr, Args&gt;::slot_pmf_extended(sigslot::detail::cleanable&amp;, F&amp;&amp;, P&amp;&amp;, sigslot::group_id)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:958:11: error: class ‘sigslot::detail::slot_pmf_extended&lt;Pmf, Ptr, Args&gt;’ does not have any field named ‘pmf’</span><br><span class="line">  958 |         , pmf&#123;std::forward&lt;F&gt;(f)&#125;</span><br><span class="line">      |           ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:959:11: error: class ‘sigslot::detail::slot_pmf_extended&lt;Pmf, Ptr, Args&gt;’ does not have any field named ‘ptr’</span><br><span class="line">  959 |         , ptr&#123;std::forward&lt;P&gt;(p)&#125; &#123;&#125;</span><br><span class="line">      |           ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::detail::slot_pmf_extended&lt;Pmf, Ptr, Args&gt;::call_slot(Args ...)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:965:12: error: ‘ptr’ was not declared in this scope; did you mean ‘Ptr’?</span><br><span class="line">  965 |         ((*ptr).*pmf)(conn, args...);</span><br><span class="line">      |            ^~~</span><br><span class="line">      |            Ptr</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:965:18: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line">  965 |         ((*ptr).*pmf)(conn, args...);</span><br><span class="line">      |                  ^~~</span><br><span class="line">      |                  Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘sigslot::detail::func_ptr sigslot::detail::slot_pmf_extended&lt;Pmf, Ptr, Args&gt;::get_callable() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:969:33: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line">  969 |         return get_function_ptr(pmf);</span><br><span class="line">      |                                 ^~~</span><br><span class="line">      |                                 Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const void* sigslot::detail::slot_pmf_extended&lt;Pmf, Ptr, Args&gt;::get_object() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:972:31: error: ‘ptr’ was not declared in this scope; did you mean ‘Ptr’?</span><br><span class="line">  972 |         return get_object_ptr(ptr);</span><br><span class="line">      |                               ^~~</span><br><span class="line">      |                               Ptr</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const std::type_info&amp; sigslot::detail::slot_pmf_extended&lt;Pmf, Ptr, Args&gt;::get_callable_type() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:977:23: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line">  977 |         return typeid(pmf);</span><br><span class="line">      |                       ^~~</span><br><span class="line">      |                       Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: At global scope:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1032:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line"> 1032 |     std::decay_t&lt;Func&gt; func;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1033:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line"> 1033 |     std::decay_t&lt;WeakPtr&gt; ptr;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In constructor ‘constexpr sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;::slot_tracked(sigslot::detail::cleanable&amp;, F&amp;&amp;, P&amp;&amp;, sigslot::group_id)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:997:11: error: class ‘sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;’ does not have any field named ‘func’</span><br><span class="line">  997 |         , func&#123;std::forward&lt;F&gt;(f)&#125;</span><br><span class="line">      |           ^~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:998:11: error: class ‘sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;’ does not have any field named ‘ptr’</span><br><span class="line">  998 |         , ptr&#123;std::forward&lt;P&gt;(p)&#125;</span><br><span class="line">      |           ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘bool sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;::connected() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1002:17: error: ‘ptr’ was not declared in this scope</span><br><span class="line"> 1002 |         return !ptr.expired() &amp;&amp; slot_state::connected();</span><br><span class="line">      |                 ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;::call_slot(Args ...)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1007:19: error: ‘ptr’ was not declared in this scope</span><br><span class="line"> 1007 |         auto sp = ptr.lock();</span><br><span class="line">      |                   ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘sigslot::detail::func_ptr sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;::get_callable() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1018:33: error: ‘func’ was not declared in this scope; did you mean ‘Func’?</span><br><span class="line"> 1018 |         return get_function_ptr(func);</span><br><span class="line">      |                                 ^~~~</span><br><span class="line">      |                                 Func</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const void* sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;::get_object() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1022:31: error: ‘ptr’ was not declared in this scope</span><br><span class="line"> 1022 |         return get_object_ptr(ptr);</span><br><span class="line">      |                               ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const std::type_info&amp; sigslot::detail::slot_tracked&lt;Func, WeakPtr, Args&gt;::get_callable_type() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1027:23: error: ‘func’ was not declared in this scope; did you mean ‘Func’?</span><br><span class="line"> 1027 |         return typeid(func);</span><br><span class="line">      |                       ^~~~</span><br><span class="line">      |                       Func</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: At global scope:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1082:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line"> 1082 |     std::decay_t&lt;Pmf&gt; pmf;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1083:10: error: ‘decay_t’ in namespace ‘std’ does not name a template type; did you mean ‘decay’?</span><br><span class="line"> 1083 |     std::decay_t&lt;WeakPtr&gt; ptr;</span><br><span class="line">      |          ^~~~~~~</span><br><span class="line">      |          decay</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In constructor ‘constexpr sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;::slot_pmf_tracked(sigslot::detail::cleanable&amp;, F&amp;&amp;, P&amp;&amp;, sigslot::group_id)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1047:11: error: class ‘sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;’ does not have any field named ‘pmf’</span><br><span class="line"> 1047 |         , pmf&#123;std::forward&lt;F&gt;(f)&#125;</span><br><span class="line">      |           ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1048:11: error: class ‘sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;’ does not have any field named ‘ptr’</span><br><span class="line"> 1048 |         , ptr&#123;std::forward&lt;P&gt;(p)&#125;</span><br><span class="line">      |           ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘bool sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;::connected() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1052:17: error: ‘ptr’ was not declared in this scope</span><br><span class="line"> 1052 |         return !ptr.expired() &amp;&amp; slot_state::connected();</span><br><span class="line">      |                 ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;::call_slot(Args ...)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1057:19: error: ‘ptr’ was not declared in this scope</span><br><span class="line"> 1057 |         auto sp = ptr.lock();</span><br><span class="line">      |                   ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1063:21: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line"> 1063 |             ((*sp).*pmf)(args...);</span><br><span class="line">      |                     ^~~</span><br><span class="line">      |                     Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘sigslot::detail::func_ptr sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;::get_callable() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1068:33: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line"> 1068 |         return get_function_ptr(pmf);</span><br><span class="line">      |                                 ^~~</span><br><span class="line">      |                                 Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const void* sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;::get_object() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1072:31: error: ‘ptr’ was not declared in this scope</span><br><span class="line"> 1072 |         return get_object_ptr(ptr);</span><br><span class="line">      |                               ^~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘const std::type_info&amp; sigslot::detail::slot_pmf_tracked&lt;Pmf, WeakPtr, Args&gt;::get_callable_type() const’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1077:23: error: ‘pmf’ was not declared in this scope; did you mean ‘Pmf’?</span><br><span class="line"> 1077 |         return typeid(pmf);</span><br><span class="line">      |                       ^~~</span><br><span class="line">      |                       Pmf</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: At global scope:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1115:27: error: ‘conditional_t’ in namespace ‘std’ does not name a template type; did you mean ‘conditional’?</span><br><span class="line"> 1115 |     using cow_type = std::conditional_t&lt;is_thread_safe&lt;L&gt;::value,</span><br><span class="line">      |                           ^~~~~~~~~~~~~</span><br><span class="line">      |                           conditional</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1119:32: error: ‘conditional_t’ in namespace ‘std’ does not name a template type; did you mean ‘conditional’?</span><br><span class="line"> 1119 |     using cow_copy_type = std::conditional_t&lt;is_thread_safe&lt;L&gt;::value,</span><br><span class="line">      |                                ^~~~~~~~~~~~~</span><br><span class="line">      |                                conditional</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1201:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1201 |     std::enable_if_t&lt;trait::is_callable_v&lt;arg_list, Callable&gt;, connection&gt;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1221:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1221 |     std::enable_if_t&lt;trait::is_callable_v&lt;ext_arg_list, Callable&gt;, connection&gt;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1241:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1241 |     std::enable_if_t&lt;trait::is_callable_v&lt;arg_list, Pmf, Ptr&gt; &amp;&amp;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1261:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1261 |     std::enable_if_t&lt;trait::is_callable_v&lt;arg_list, Pmf, Ptr&gt; &amp;&amp;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1281:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1281 |     std::enable_if_t&lt;trait::is_callable_v&lt;ext_arg_list, Pmf, Ptr&gt; &amp;&amp;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1310:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1310 |     std::enable_if_t&lt;!trait::is_callable_v&lt;arg_list, Pmf&gt; &amp;&amp;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1340:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1340 |     std::enable_if_t&lt;trait::is_callable_v&lt;arg_list, Callable&gt; &amp;&amp;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1376:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1376 |     std::enable_if_t&lt;(trait::is_callable_v&lt;arg_list, Callable&gt; ||</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1399:10: error: ‘enable_if_t’ in namespace ‘std’ does not name a template type; did you mean ‘enable_if’?</span><br><span class="line"> 1399 |     std::enable_if_t&lt;!trait::is_callable_v&lt;arg_list, Obj&gt; &amp;&amp;</span><br><span class="line">      |          ^~~~~~~~~~~</span><br><span class="line">      |          enable_if</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1522:12: error: ‘cow_copy_type’ does not name a type</span><br><span class="line"> 1522 |     inline cow_copy_type&lt;list_type, Lockable&gt; slots_reference() &#123;</span><br><span class="line">      |            ^~~~~~~~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1529:12: error: ‘make_slot’ function uses ‘auto’ type specifier without trailing return type</span><br><span class="line"> 1529 |     inline auto make_slot(A &amp;&amp; ...a) &#123;</span><br><span class="line">      |            ^~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1529:12: note: deduced return type only available with ‘-std=c++14’ or ‘-std=gnu++14’</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1589:5: error: ‘cow_type’ does not name a type; did you mean ‘lock_type’?</span><br><span class="line"> 1589 |     cow_type&lt;list_type, Lockable&gt; m_slots;</span><br><span class="line">      |     ^~~~~~~~</span><br><span class="line">      |     lock_type</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In constructor ‘sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::signal_base(sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;&amp;&amp;)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1146:14: error: ‘m_slots’ was not declared in this scope</span><br><span class="line"> 1146 |         swap(m_slots, o.m_slots);</span><br><span class="line">      |              ^~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;&amp; sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::operator=(sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;&amp;&amp;)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1155:14: error: ‘m_slots’ was not declared in this scope</span><br><span class="line"> 1155 |         swap(m_slots, o.m_slots);</span><br><span class="line">      |              ^~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::operator()(U&amp;&amp; ...)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1180:9: error: ‘cow_copy_type’ was not declared in this scope</span><br><span class="line"> 1180 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |         ^~~~~~~~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1180:32: error: expected primary-expression before ‘,’ token</span><br><span class="line"> 1180 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1180:42: error: expected primary-expression before ‘&gt;’ token</span><br><span class="line"> 1180 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                          ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1180:44: error: ‘ref’ was not declared in this scope; did you mean ‘std::ref’?</span><br><span class="line"> 1180 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                            ^~~</span><br><span class="line">      |                                            std::ref</span><br><span class="line">In file included from /usr/include/c++/9/functional:58,</span><br><span class="line">                 from /usr/local/include/pangolin/utils/type_convert.h:33,</span><br><span class="line">                 from /usr/local/include/pangolin/utils/params.h:31,</span><br><span class="line">                 from /usr/local/include/pangolin/display/display.h:33,</span><br><span class="line">                 from /usr/local/include/pangolin/pangolin.h:38,</span><br><span class="line">                 from /home/hbt/文档/slambook2/ch4/example/trajectoryError.cpp:4:</span><br><span class="line">/usr/include/c++/9/bits/refwrap.h:370:5: note: ‘std::ref’ declared here</span><br><span class="line">  370 |     ref(reference_wrapper&lt;_Tp&gt; __t) noexcept</span><br><span class="line">      |     ^~~</span><br><span class="line">In file included from /usr/local/include/pangolin/utils/signal_slot.h:3,</span><br><span class="line">                 from /usr/local/include/pangolin/windowing/window.h:35,</span><br><span class="line">                 from /usr/local/include/pangolin/display/display.h:34,</span><br><span class="line">                 from /usr/local/include/pangolin/pangolin.h:38,</span><br><span class="line">                 from /home/hbt/文档/slambook2/ch4/example/trajectoryError.cpp:4:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1180:50: error: there are no arguments to ‘slots_reference’ that depend on a template parameter, so a declaration of ‘slots_reference’ must be available [-fpermissive]</span><br><span class="line"> 1180 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                                  ^~~~~~~~~~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1180:50: note: (if you use ‘-fpermissive’, G++ will accept your code, but allowing the use of an undeclared name is deprecated)</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘size_t sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::disconnect(const Callable&amp;, const Obj&amp;)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1423:41: error: use of ‘auto’ in lambda parameter declaration only available with ‘-std=c++14’ or ‘-std=gnu++14’</span><br><span class="line"> 1423 |         return disconnect_if([&amp;] (const auto &amp;s) &#123;</span><br><span class="line">      |                                         ^~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In lambda function:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1424:21: error: base operand of ‘-&gt;’ is not a pointer</span><br><span class="line"> 1424 |             return s-&gt;has_object(obj) &amp;&amp; s-&gt;has_callable(c);</span><br><span class="line">      |                     ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1424:43: error: base operand of ‘-&gt;’ is not a pointer</span><br><span class="line"> 1424 |             return s-&gt;has_object(obj) &amp;&amp; s-&gt;has_callable(c);</span><br><span class="line">      |                                           ^~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘size_t sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::disconnect(sigslot::group_id)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1439:46: error: ‘m_slots’ was not declared in this scope</span><br><span class="line"> 1439 |         for (auto &amp;group : detail::cow_write(m_slots)) &#123;</span><br><span class="line">      |                                              ^~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘size_t sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::slot_count()’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1486:9: error: ‘cow_copy_type’ was not declared in this scope</span><br><span class="line"> 1486 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |         ^~~~~~~~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1486:32: error: expected primary-expression before ‘,’ token</span><br><span class="line"> 1486 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1486:42: error: expected primary-expression before ‘&gt;’ token</span><br><span class="line"> 1486 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                          ^</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1486:44: error: ‘ref’ was not declared in this scope; did you mean ‘std::ref’?</span><br><span class="line"> 1486 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                            ^~~</span><br><span class="line">      |                                            std::ref</span><br><span class="line">In file included from /usr/include/c++/9/functional:58,</span><br><span class="line">                 from /usr/local/include/pangolin/utils/type_convert.h:33,</span><br><span class="line">                 from /usr/local/include/pangolin/utils/params.h:31,</span><br><span class="line">                 from /usr/local/include/pangolin/display/display.h:33,</span><br><span class="line">                 from /usr/local/include/pangolin/pangolin.h:38,</span><br><span class="line">                 from /home/hbt/文档/slambook2/ch4/example/trajectoryError.cpp:4:</span><br><span class="line">/usr/include/c++/9/bits/refwrap.h:370:5: note: ‘std::ref’ declared here</span><br><span class="line">  370 |     ref(reference_wrapper&lt;_Tp&gt; __t) noexcept</span><br><span class="line">      |     ^~~</span><br><span class="line">In file included from /usr/local/include/pangolin/utils/signal_slot.h:3,</span><br><span class="line">                 from /usr/local/include/pangolin/windowing/window.h:35,</span><br><span class="line">                 from /usr/local/include/pangolin/display/display.h:34,</span><br><span class="line">                 from /usr/local/include/pangolin/pangolin.h:38,</span><br><span class="line">                 from /home/hbt/文档/slambook2/ch4/example/trajectoryError.cpp:4:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1486:50: error: there are no arguments to ‘slots_reference’ that depend on a template parameter, so a declaration of ‘slots_reference’ must be available [-fpermissive]</span><br><span class="line"> 1486 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                                  ^~~~~~~~~~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::clean(sigslot::detail::slot_state*)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1504:46: error: ‘m_slots’ was not declared in this scope</span><br><span class="line"> 1504 |         for (auto &amp;group : detail::cow_write(m_slots)) &#123;</span><br><span class="line">      |                                              ^~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::add_slot(sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::slot_ptr&amp;&amp;)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1538:42: error: ‘m_slots’ was not declared in this scope</span><br><span class="line"> 1538 |         auto &amp;groups = detail::cow_write(m_slots);</span><br><span class="line">      |                                          ^~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘size_t sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::disconnect_if(Cond&amp;&amp;)’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1560:42: error: ‘m_slots’ was not declared in this scope</span><br><span class="line"> 1560 |         auto &amp;groups = detail::cow_write(m_slots);</span><br><span class="line">      |                                          ^~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In member function ‘void sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::clear()’:</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1584:27: error: ‘m_slots’ was not declared in this scope</span><br><span class="line"> 1584 |         detail::cow_write(m_slots).clear();</span><br><span class="line">      |                           ^~~~~~~</span><br><span class="line">/usr/local/include/sigslot/signal.hpp: In instantiation of ‘void sigslot::signal_base&lt; &lt;template-parameter-1-1&gt;, &lt;template-parameter-1-2&gt; &gt;::operator()(U&amp;&amp; ...) [with U = &#123;pangolin::VarState::Event&#125;; Lockable = std::mutex; T = &#123;pangolin::VarState::Event&#125;]’:</span><br><span class="line">/usr/local/include/pangolin/var/varstate.h:264:23:   required from ‘std::map&lt;std::__cxx11::basic_string&lt;char&gt;, std::shared_ptr&lt;pangolin::VarValueGeneric&gt; &gt;::iterator pangolin::VarState::AddUpgradedVar(const std::shared_ptr&lt;pangolin::VarValue&lt;T&gt; &gt;&amp;, const iterator&amp;, bool) [with T = bool; std::map&lt;std::__cxx11::basic_string&lt;char&gt;, std::shared_ptr&lt;pangolin::VarValueGeneric&gt; &gt;::iterator = std::_Rb_tree_iterator&lt;std::pair&lt;const std::__cxx11::basic_string&lt;char&gt;, std::shared_ptr&lt;pangolin::VarValueGeneric&gt; &gt; &gt;]’</span><br><span class="line">/usr/local/include/pangolin/var/varstate.h:205:13:   required from ‘std::shared_ptr&lt;pangolin::VarValueGeneric&gt; pangolin::VarState::GetOrCreateVar(const T&amp;, const pangolin::VarMeta&amp;) [with T = bool]’</span><br><span class="line">/usr/local/include/pangolin/var/var.h:83:50:   required from ‘pangolin::Var&lt;T&gt;::Var(const T&amp;, const pangolin::VarMeta&amp;) [with T = bool]’</span><br><span class="line">/usr/local/include/pangolin/var/var.h:88:35:   required from ‘pangolin::Var&lt;T&gt;::Var(const string&amp;, const T&amp;) [with T = bool; std::string = std::__cxx11::basic_string&lt;char&gt;]’</span><br><span class="line">/usr/local/include/pangolin/display/widgets.h:153:50:   required from here</span><br><span class="line">/usr/local/include/sigslot/signal.hpp:1180:65: error: ‘slots_reference’ was not declared in this scope</span><br><span class="line"> 1180 |         cow_copy_type&lt;list_type, Lockable&gt; ref = slots_reference();</span><br><span class="line">      |                                                  ~~~~~~~~~~~~~~~^~</span><br><span class="line">make[2]: *** [CMakeFiles/trajectoryError.dir/build.make:63：CMakeFiles/trajectoryError.dir/trajectoryError.cpp.o] 错误 1</span><br><span class="line">make[1]: *** [CMakeFiles/Makefile2:76：CMakeFiles/trajectoryError.dir/all] 错误 2</span><br><span class="line">make: *** [Makefile:84：all] 错误 2</span><br></pre></td></tr></table></figure>
+<p>大部分的原因就是CMakelist文件没有把库链接进来，所以只需要修改cmakelist文件为文章开头那样即可。<br>然后运行效果如图：<br><img src="https://img-blog.csdnimg.cn/c77d27e474b84c0782c0bbbf5480ec8c.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"><br>参考文章：<br><a target="_blank" rel="noopener" href="https://blog.csdn.net/Bonaventure/article/details/122835996?ops_request_misc=&request_id=&biz_id=102&utm_term=/usr/local/include/sigslot/sig&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-1-122835996.first_rank_v2_pc_rank_v29&spm=1018.2226.3001.4187">《视觉SLAM十四讲》第二版源码slambook2编译调试</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/bianchengjingling22/article/details/88794329?ops_request_misc=&request_id=&biz_id=102&utm_term=add_compile_options(-std=c++11&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-0-88794329.first_rank_v2_pc_rank_v29&spm=1018.2226.3001.4187">cmake:设置编译选项的讲究(add_compile_options和CMAKE_CXX_FLAGS的区别) 转自CSDN</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/fb_941219/article/details/91358423?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522164549688016780265443337%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fall.%2522%257D&request_id=164549688016780265443337&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~first_rank_ecpm_v1~rank_v31_ecpm-1-91358423.first_rank_v2_pc_rank_v29&utm_term=useSophus.cpp:(.text.startup+0xd4):+undefined+reference+to+%60Sophus::SO3::SO3(Eigen::Matrix%3Cdouble,+3,+3,+0,+3,+3%3E+const&)+/usr/bin/ld:+useSophus.cpp:(.text.startup+0xdf):+undefined+reference+to+%60Soph&spm=1018.2226.3001.4187">(.text.startup+0x102)：对‘Sophus::SO3::operator*(Sophus::SO3 const&amp;) const’未定义的引用</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>如果觉得有帮助的话可以对我进行打赏哦~</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/weichat.jpg" alt="Hou-baitang 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="Hou-baitang 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/15/hello-world/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/10/15/%E4%BD%BF%E7%94%A8Clash%E6%9F%A5%E6%89%BE%E8%B5%84%E6%96%99%E6%96%B9%E6%B3%95/" rel="next" title="使用Clash在Google查找ros资料">
+      使用Clash在Google查找ros资料 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2"><span class="nav-number">1.</span> <span class="nav-text">个人理解视觉SLAM十四讲</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E4%B8%80%E5%AE%9A%E6%9D%A1%E4%BB%B6%E4%B8%8B%E4%BD%BF%E7%94%A8VSLAM%EF%BC%8C%E7%9B%B8%E8%BE%83%E4%BA%8E%E6%AF%94%E8%BE%83%E6%88%90%E7%86%9F%E7%9A%84%E6%BF%80%E5%85%89SLAM%E6%9D%A5%E8%AF%B4%E9%80%82%E5%BA%94%E6%80%A7%E8%BE%83%E5%A4%A7%EF%BC%8C%E9%99%A4%E4%BA%86%E6%9E%81%E4%B8%BA%E5%8D%95%E4%B8%80%E7%9A%84%E5%85%A8%E8%89%B2%E7%8E%AF%E5%A2%83%EF%BC%88%E5%85%A8%E7%99%BD%E6%88%96%E8%80%85%E6%98%AF%E5%85%B6%E4%BB%96%E9%A2%9C%E8%89%B2%E7%9A%84%E5%B1%8B%E5%AD%90%E7%AD%89%EF%BC%8C%E6%AF%94%E8%BE%83%E5%A5%BD%E7%90%86%E8%A7%A3%EF%BC%89%E9%80%82%E5%BA%94%E6%80%A7%E5%BC%BA%EF%BC%8C%E8%A6%81%E6%B1%82%E6%8A%80%E6%9C%AF%E9%9A%BE%E5%BA%A6%E9%AB%98%EF%BC%8C%E4%BD%86%E7%9B%AE%E5%89%8D%E7%9A%84VSLAM%E6%A1%86%E6%9E%B6%E5%9F%BA%E6%9C%AC%E5%AE%9E%E7%8E%B0%E3%80%82"><span class="nav-number">1.0.1.</span> <span class="nav-text">在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%EF%BC%8C%E4%BA%8C%E8%AE%B2"><span class="nav-number">1.1.</span> <span class="nav-text">第一，二讲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E6%95%B0%E5%AD%A6"><span class="nav-number">1.2.</span> <span class="nav-text">关于数学</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E9%97%AE%E9%A2%98-%E5%A6%82%E4%BD%95%E8%AE%A1%E7%AE%97%E5%90%8C%E4%B8%80%E4%B8%AA%E7%9B%B8%E9%87%8F%E5%9C%A8%E4%B8%8D%E5%90%8C%E5%9D%90%E6%A0%87%E7%B3%BB%E9%87%8C%E9%9D%A2%E7%9A%84%E5%9D%90%E6%A0%87"><span class="nav-number">1.2.0.1.</span> <span class="nav-text">基本问题 -&gt; 如何计算同一个相量在不同坐标系里面的坐标</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E5%85%88%E4%BA%86%E8%A7%A3%E5%87%A0%E4%B8%AA%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.1.</span> <span class="nav-text">首先了解几个问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%9B%B8%E6%9C%BA%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">相机模型</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%EF%BC%8C%E5%9B%9B%E8%AE%B2"><span class="nav-number">1.3.</span> <span class="nav-text">第三，四讲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E6%9D%8E%E7%BE%A4%E4%B8%8E%E6%9D%8E%E4%BB%A3%E6%95%B0"><span class="nav-number">1.4.</span> <span class="nav-text">第四讲李群与李代数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#useSophus-cpp%E6%96%87%E4%BB%B6%E9%83%A8%E5%88%86"><span class="nav-number">1.4.0.1.</span> <span class="nav-text">useSophus.cpp文件部分</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#tarjectoryError-cpp%E6%96%87%E4%BB%B6%E9%83%A8%E5%88%86"><span class="nav-number">1.4.0.2.</span> <span class="nav-text">tarjectoryError.cpp文件部分</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hou-baitang"
+      src="/images/01.jpg">
+  <p class="site-author-name" itemprop="name">Hou-baitang</p>
+  <div class="site-description" itemprop="description">用于记录学习生活，成为一个自己想要成为的人</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/2914360094@qq.com" title="E-Mail → 2914360094@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hou-baitang</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+    <script defer src="/lib/three/three-waves.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'CHrcBwX6gcXANbBEKYs61u5W-gzGzoHsz',
+      appKey     : 'vWEYMt0YeFAFL8Xp2TDI0Lhn',
+      placeholder: "快来评论叭~~",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : true,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
