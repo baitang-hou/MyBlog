@@ -17,13 +17,13 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"baitang-hou.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="个人理解视觉SLAM十四讲在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。第一，二讲不得不说看完第一二讲的书本来感觉挺简单的，后来看了视频才发现不然，还是那句话，动手实操才是让理智脑控制引导情绪脑和本能脑的最有效方法，下面开始记录。 开篇便狠狠提及了数学">
 <meta property="og:type" content="article">
 <meta property="og:title" content="个人理解视觉SLAM十四讲">
-<meta property="og:url" content="http://example.com/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/index.html">
+<meta property="og:url" content="https://baitang-hou.github.io/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/index.html">
 <meta property="og:site_name" content="革Mean君">
 <meta property="og:description" content="个人理解视觉SLAM十四讲在一定条件下使用VSLAM，相较于比较成熟的激光SLAM来说适应性较大，除了极为单一的全色环境（全白或者是其他颜色的屋子等，比较好理解）适应性强，要求技术难度高，但目前的VSLAM框架基本实现。第一，二讲不得不说看完第一二讲的书本来感觉挺简单的，后来看了视频才发现不然，还是那句话，动手实操才是让理智脑控制引导情绪脑和本能脑的最有效方法，下面开始记录。 开篇便狠狠提及了数学">
 <meta property="og:locale" content="zh_CN">
@@ -46,7 +46,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://img-blog.csdnimg.cn/653e1c6c447c4d178dc877e85074a4a3.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA6Z2pTWVhbuWQmw==,size_20,color_FFFFFF,t_70,g_se,x_16">
 
-<link rel="canonical" href="http://example.com/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/">
+<link rel="canonical" href="https://baitang-hou.github.io/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/">
 
 
 <script id="page-configurations">
@@ -208,7 +208,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/">
+    <link itemprop="mainEntityOfPage" href="https://baitang-hou.github.io/2023/10/15/%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%E8%A7%86%E8%A7%89SLAM%E5%8D%81%E5%9B%9B%E8%AE%B2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/01.jpg">
