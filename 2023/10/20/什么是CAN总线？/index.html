@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"baitang-hou.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="当谈到控制系统和嵌入式系统的通信，CAN（Controller Area Network）总线是一种常见的选择。CAN总线是一种先进的通信协议，广泛用于汽车、工业自动化、医疗设备和其他领域。本文将详细介绍CAN总线的工作原理、应用领域、优势和一些重要的技术细节。 1. 什么是CAN总线？CAN总线是一种串行通信协议，最初由德国公司Bosch于20世纪80年代开发。它旨在提供可靠的数据通信，特别适用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CAN总线解读">
+<meta property="og:url" content="https://baitang-hou.github.io/2023/10/20/%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F/index.html">
+<meta property="og:site_name" content="革Mean君">
+<meta property="og:description" content="当谈到控制系统和嵌入式系统的通信，CAN（Controller Area Network）总线是一种常见的选择。CAN总线是一种先进的通信协议，广泛用于汽车、工业自动化、医疗设备和其他领域。本文将详细介绍CAN总线的工作原理、应用领域、优势和一些重要的技术细节。 1. 什么是CAN总线？CAN总线是一种串行通信协议，最初由德国公司Bosch于20世纪80年代开发。它旨在提供可靠的数据通信，特别适用">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-10-19T16:00:00.000Z">
+<meta property="article:modified_time" content="2023-10-20T02:33:26.956Z">
+<meta property="article:author" content="Hou-baitang">
+<meta property="article:tag" content="i don t know">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://baitang-hou.github.io/2023/10/20/%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>CAN总线解读 | 革Mean君</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">革Mean君</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">我的个人博客，用来记录学习过程以及心得等有意义的事情  有问题可以联系2914360094@qq.com</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">0</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">0</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">15</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://baitang-hou.github.io/2023/10/20/%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/01.jpg">
+      <meta itemprop="name" content="Hou-baitang">
+      <meta itemprop="description" content="用于记录学习生活，成为一个自己想要成为的人">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="革Mean君">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CAN总线解读
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2023-10-20 00:00:00 / 修改时间：10:33:26" itemprop="dateCreated datePublished" datetime="2023-10-20T00:00:00+08:00">2023-10-20</time>
+            </span>
+
+          
+            <span id="/2023/10/20/%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F/" class="post-meta-item leancloud_visitors" data-flag-title="CAN总线解读" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2023/10/20/%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/10/20/%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>当谈到控制系统和嵌入式系统的通信，CAN（Controller Area Network）总线是一种常见的选择。CAN总线是一种先进的通信协议，广泛用于汽车、工业自动化、医疗设备和其他领域。本文将详细介绍CAN总线的工作原理、应用领域、优势和一些重要的技术细节。</p>
+<h2 id="1-什么是CAN总线？"><a href="#1-什么是CAN总线？" class="headerlink" title="1. 什么是CAN总线？"></a>1. 什么是CAN总线？</h2><p>CAN总线是一种串行通信协议，最初由德国公司Bosch于20世纪80年代开发。它旨在提供可靠的数据通信，特别适用于需要高度实时性和容错性的应用。CAN总线通常采用双绞线，允许多个设备在同一总线上进行通信。这些设备可以是传感器、执行器、控制器等，这为各种领域的应用提供了灵活性和可扩展性。</p>
+<h2 id="2-CAN总线的工作原理"><a href="#2-CAN总线的工作原理" class="headerlink" title="2. CAN总线的工作原理"></a>2. CAN总线的工作原理</h2><p>CAN总线的工作原理相当复杂，但可以概括为以下几个关键概念：</p>
+<h3 id="2-1-位传递"><a href="#2-1-位传递" class="headerlink" title="2.1. 位传递"></a>2.1. 位传递</h3><p>CAN总线使用差分信号传输，这意味着它比单一电平传输更耐干扰。在CAN总线中，数据位的表示是通过电压差异来实现的。这种设计减少了电磁干扰对数据传输的影响，提高了通信的可靠性。</p>
+<h3 id="2-2-帧格式"><a href="#2-2-帧格式" class="headerlink" title="2.2. 帧格式"></a>2.2. 帧格式</h3><p>CAN总线中的数据传输是通过帧来完成的。这些帧可以分为数据帧和远程帧。数据帧用于传输实际的数据，而远程帧用于请求数据。每个帧都包括一个标识符，用于标识消息的发送者和接收者，以及控制位、数据字段和CRC校验，以确保数据的完整性。</p>
+<h3 id="2-3-硬件过滤"><a href="#2-3-硬件过滤" class="headerlink" title="2.3. 硬件过滤"></a>2.3. 硬件过滤</h3><p>CAN总线中的每个设备都有一个独特的标识符，这个标识符用于唯一标识设备。通过配置硬件过滤，设备可以选择仅接收特定标识符的消息，而忽略其他消息。这种机制可以减少总线上的通信流量，提高了系统的效率。</p>
+<h3 id="2-4-碰撞检测"><a href="#2-4-碰撞检测" class="headerlink" title="2.4. 碰撞检测"></a>2.4. 碰撞检测</h3><p>在CAN总线上，多个设备可能会尝试同时发送消息。为了解决潜在的冲突，CAN总线引入了碰撞检测机制。当设备检测到碰撞时，它会停止发送消息，等待一段时间后重新尝试。这确保了消息的可靠传输，并减少了冲突引起的数据损坏。</p>
+<h3 id="2-5-错误处理"><a href="#2-5-错误处理" class="headerlink" title="2.5. 错误处理"></a>2.5. 错误处理</h3><p>CAN总线内置了强大的错误检测和纠正机制。每个CAN帧都包含CRC校验，用于检测数据传输中的错误。如果错误被检测到，发送设备可以请求重新发送消息，确保数据的完整性和可靠性。这使得CAN总线在嘈杂的环境中能够有效地工作。</p>
+<h2 id="3-CAN总线的应用领域"><a href="#3-CAN总线的应用领域" class="headerlink" title="3. CAN总线的应用领域"></a>3. CAN总线的应用领域</h2><p>CAN总线已经在多个领域得到广泛应用：</p>
+<h3 id="3-1-汽车行业"><a href="#3-1-汽车行业" class="headerlink" title="3.1. 汽车行业"></a>3.1. 汽车行业</h3><p>在汽车行业，CAN总线广泛用于连接和协调车辆的各种电子控制单元。这些单元包括发动机控制、制动系统、空调控制等。CAN总线允许这些控制单元之间快速、可靠地交换信息，以提高汽车性能、安全性和燃油效率。</p>
+<h3 id="3-2-工业自动化"><a href="#3-2-工业自动化" class="headerlink" title="3.2. 工业自动化"></a>3.2. 工业自动化</h3><p>工业自动化是一个关键领域，需要高度可靠和实时的通信。CAN总线在这一领域中被广泛使用，用于连接各种传感器、执行器和PLC等设备。这些设备协同工作，监控生产过程，确保生产效率和质量。</p>
+<h3 id="3-3-医疗设备"><a href="#3-3-医疗设备" class="headerlink" title="3.3. 医疗设备"></a>3.3. 医疗设备</h3><p>医疗设备行业对可靠性和安全性的要求非常高。CAN总线被广泛应用于医疗设备，例如监护仪、医疗图像设备（如X射线和MRI机器）以及手术机器人。它允许这些设备快速、可靠地交换数据，以确保患者的安全和治疗的准确性。</p>
+<h3 id="3-4-航空航天"><a href="#3-4-航空航天" class="headerlink" title="3.4. 航空航天"></a>3.4. 航空航天</h3><p>航空航天领域对通信系统的可靠性和实时性要求非常高。CAN总线被广泛用于飞机和航天器上的各种控制和监测系统，如发动机控制、导航系统、通信系统等。它有助于确保航空器的安全性和性能。</p>
+<h2 id="4-CAN总线的优势"><a href="#4-CAN总线的优势" class="headerlink" title="4. CAN总线的优势"></a>4. CAN总线的优势</h2><p>CAN总线具有多个优势，使其在上述应用领域中备受青睐：</p>
+<h3 id="4-1-实时性"><a href="#4-1-实时性" class="headerlink" title="4.1. 实时性"></a>4.1. 实时性</h3><p>实时性是CAN总线的一个显著优势。它可以提供可预测的通信延迟，适用于需要及时响应的应用，如汽车的刹车系统或工业自动化中的紧急停机操作。</p>
+<h3 id="4-2-可靠性"><a href="#4-2-可靠性" class="headerlink" title="4.2. 可靠性"></a>4.2. 可靠性</h3><p>CAN总线具有高度可靠的通信机制。差分信号传输和内置的错误检测和纠正机制使其能够在嘈杂的工业环境或汽车电子系统中提供可靠的通信，减少了数据丢失和损坏的可能性。</p>
+<h3 id="4-3-灵活性"><a href="#4-3-灵活性" class="headerlink" title="4.3. 灵活性"></a>4.3. 灵活性</h3><p>CAN总线的架构允许多个设备连接到同一总线上，这提供了灵活性和可扩展性。此外，CAN总线可以根据应用的需要进行动态配置，以适应不同的通信需求。</p>
+<h3 id="4-4-高带宽"><a href="#4-4-高带宽" class="headerlink" title="4.4. 高带宽"></a>4.4. 高带宽</h3><p>CAN总线支持多种不同的数据传输速度，包括从较低速度（如125 kbps）到更高速度（如1 Mbps）的范围。这使其适用于各种应用，从低带宽传感器数据到高带宽的图像传输。</p>
+<h2 id="5-技术细节"><a href="#5-技术细节" class="headerlink" title="5. 技术细节"></a>5. 技术细节</h2><p>为了更好地理解CAN总线，以下是一些关键的技术细节：</p>
+<h3 id="5-1-标准"><a href="#5-1-标准" class="headerlink" title="5.1. 标准"></a>5.1. 标准</h3><p>CAN总线有两个主要的标准，即CAN 2.0A和CAN 2.0B。这两个标准在标识符长度和数据传输速度方面略有不同，以适应不同的应用需求。</p>
+<h3 id="5-2-数据传输速度"><a href="#5-2-数据传输速度" class="headerlink" title="5.2. 数据传输速度"></a>5.2. 数据传输速度</h3><p>CAN总线支持不同的数据传输速度，通常以位每秒（bps）来表示。常见的速度包括125 kbps、250 kbps、500 kbps和1 Mbps。CAN总线支持多种不同的数据传输速度，通常以位每秒（bps）来表示。不同的应用可能需要不同的传输速度，以满足其通信需求。</p>
+<h3 id="5-3-扩展CAN"><a href="#5-3-扩展CAN" class="headerlink" title="5.3. 扩展CAN"></a>5.3. 扩展CAN</h3><p>扩展CAN（CAN FD）是CAN总线的升级版本，它支持更高的数据传输速度和更大的数据帧。这使其更适合需要高带宽数据传输的应用，如高分辨率图像或音频传输。</p>
+<h3 id="5-4-CAN工具"><a href="#5-4-CAN工具" class="headerlink" title="5.4. CAN工具"></a>5.4. CAN工具</h3><p>为了开发和调试CAN总线应用，通常需要专用的CAN工具。这些工具包括CAN分析仪和CAN总线接口卡，它们允许工程师监视、分析和调试CAN总线上的数据，以确保系统的正确运行和性能。</p>
+<h3 id="5-5-CAN-与其他通讯总线的对比"><a href="#5-5-CAN-与其他通讯总线的对比" class="headerlink" title="5.5. CAN 与其他通讯总线的对比"></a>5.5. CAN 与其他通讯总线的对比</h3><p>以下是CAN总线与其他总线的比较（随便收集的一些）：</p>
+<table>
+<thead>
+<tr>
+<th>特点</th>
+<th align="left">CAN总线</th>
+<th>LIN总线</th>
+<th>FlexRay总线</th>
+<th>Ethernet总线</th>
+<th>SPI总线</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据传输速度</td>
+<td align="left">适中，取决于配置，通常在几百kbps到数Mbps</td>
+<td>较低，通常在数十kbps</td>
+<td>高，最高可达10 Mbps</td>
+<td>高，通常在百Mbps至Gbps范围</td>
+<td>高，最高可达10 Mbps</td>
+</tr>
+<tr>
+<td>应用领域</td>
+<td align="left">汽车电子系统、工业自动化、医疗设备</td>
+<td>汽车座椅控制、车门控制、较简单的应用</td>
+<td>先进驾驶辅助系统（ADAS）等</td>
+<td>大规模网络、PC、服务器</td>
+<td>微控制器、传感器、外围设备</td>
+</tr>
+<tr>
+<td>实时性</td>
+<td align="left">较好</td>
+<td>有限</td>
+<td>非常好</td>
+<td>有限</td>
+<td>有限</td>
+</tr>
+<tr>
+<td>带宽需求</td>
+<td align="left">中等</td>
+<td>低</td>
+<td>高</td>
+<td>高</td>
+<td>低</td>
+</tr>
+<tr>
+<td>成本</td>
+<td align="left">适中</td>
+<td>低</td>
+<td>高</td>
+<td>适中</td>
+<td>适中</td>
+</tr>
+<tr>
+<td>设备连接数</td>
+<td align="left">多个</td>
+<td>有限</td>
+<td>有限</td>
+<td>多个</td>
+<td>点对点</td>
+</tr>
+<tr>
+<td>数据冲突检测和纠正</td>
+<td align="left">有</td>
+<td>无</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody></table>
+<p>这个表格清晰地比较了CAN总线与其他几种常见总线在数据传输速度、应用领域、实时性、带宽需求、成本、设备连接数以及数据冲突检测和纠正方面的特点。根据具体应用需求，可以选择合适的通信协议。</p>
+<h2 id="6-结论"><a href="#6-结论" class="headerlink" title="6. 结论"></a>6. 结论</h2><p>CAN总线是一种强大的通信协议，已经在多个领域中得到广泛应用。它的实时性、可靠性和灵活性使其成为控制系统和嵌入式系统的理想选择。无论是在汽车行业、工业自动化、医疗设备还是航空航天领域，CAN总线都发挥着关键的作用，促进了技术的进步和创新。希望本文的详细介绍对您有所帮助，更深入了解CAN总线的原理和应用。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>如果觉得有帮助的话可以对我进行打赏哦~</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/weichat.jpg" alt="Hou-baitang 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="Hou-baitang 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/18/CRC-16%E6%A0%A1%E9%AA%8C/" rel="prev" title="CRC-16校验">
+      <i class="fa fa-chevron-left"></i> CRC-16校验
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">1. 什么是CAN总线？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-CAN%E6%80%BB%E7%BA%BF%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">2. CAN总线的工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E4%BD%8D%E4%BC%A0%E9%80%92"><span class="nav-number">2.1.</span> <span class="nav-text">2.1. 位传递</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E5%B8%A7%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">2.2. 帧格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E7%A1%AC%E4%BB%B6%E8%BF%87%E6%BB%A4"><span class="nav-number">2.3.</span> <span class="nav-text">2.3. 硬件过滤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E7%A2%B0%E6%92%9E%E6%A3%80%E6%B5%8B"><span class="nav-number">2.4.</span> <span class="nav-text">2.4. 碰撞检测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86"><span class="nav-number">2.5.</span> <span class="nav-text">2.5. 错误处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-CAN%E6%80%BB%E7%BA%BF%E7%9A%84%E5%BA%94%E7%94%A8%E9%A2%86%E5%9F%9F"><span class="nav-number">3.</span> <span class="nav-text">3. CAN总线的应用领域</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%B1%BD%E8%BD%A6%E8%A1%8C%E4%B8%9A"><span class="nav-number">3.1.</span> <span class="nav-text">3.1. 汽车行业</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%B7%A5%E4%B8%9A%E8%87%AA%E5%8A%A8%E5%8C%96"><span class="nav-number">3.2.</span> <span class="nav-text">3.2. 工业自动化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%8C%BB%E7%96%97%E8%AE%BE%E5%A4%87"><span class="nav-number">3.3.</span> <span class="nav-text">3.3. 医疗设备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9"><span class="nav-number">3.4.</span> <span class="nav-text">3.4. 航空航天</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-CAN%E6%80%BB%E7%BA%BF%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">4.</span> <span class="nav-text">4. CAN总线的优势</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%AE%9E%E6%97%B6%E6%80%A7"><span class="nav-number">4.1.</span> <span class="nav-text">4.1. 实时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%8F%AF%E9%9D%A0%E6%80%A7"><span class="nav-number">4.2.</span> <span class="nav-text">4.2. 可靠性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E7%81%B5%E6%B4%BB%E6%80%A7"><span class="nav-number">4.3.</span> <span class="nav-text">4.3. 灵活性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E9%AB%98%E5%B8%A6%E5%AE%BD"><span class="nav-number">4.4.</span> <span class="nav-text">4.4. 高带宽</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82"><span class="nav-number">5.</span> <span class="nav-text">5. 技术细节</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E6%A0%87%E5%87%86"><span class="nav-number">5.1.</span> <span class="nav-text">5.1. 标准</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93%E9%80%9F%E5%BA%A6"><span class="nav-number">5.2.</span> <span class="nav-text">5.2. 数据传输速度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E6%89%A9%E5%B1%95CAN"><span class="nav-number">5.3.</span> <span class="nav-text">5.3. 扩展CAN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-CAN%E5%B7%A5%E5%85%B7"><span class="nav-number">5.4.</span> <span class="nav-text">5.4. CAN工具</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-CAN-%E4%B8%8E%E5%85%B6%E4%BB%96%E9%80%9A%E8%AE%AF%E6%80%BB%E7%BA%BF%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="nav-number">5.5.</span> <span class="nav-text">5.5. CAN 与其他通讯总线的对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E7%BB%93%E8%AE%BA"><span class="nav-number">6.</span> <span class="nav-text">6. 结论</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hou-baitang"
+      src="/images/01.jpg">
+  <p class="site-author-name" itemprop="name">Hou-baitang</p>
+  <div class="site-description" itemprop="description">用于记录学习生活，成为一个自己想要成为的人</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/2914360094@qq.com" title="E-Mail → 2914360094@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hou-baitang</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+    <script defer src="/lib/three/three-waves.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'CHrcBwX6gcXANbBEKYs61u5W-gzGzoHsz',
+      appKey     : 'vWEYMt0YeFAFL8Xp2TDI0Lhn',
+      placeholder: "快来评论叭~~",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : true,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
