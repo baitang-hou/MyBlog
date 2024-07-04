@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"baitang-hou.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="小华HC32F448基本使用方法及例程话不多说，本人的模板例程在这，开源自行下载： 链接：https:&#x2F;&#x2F;pan.baidu.com&#x2F;s&#x2F;1JSSa2bRqiioi4Yr8vWp28g?pwd&#x3D;r113提取码：r113 小华单片机是一款国产的32位微处理器，  ​	从他官网上看，这款单片机采用ARMCortex-M4内核，Vcc为1.8 ~ 3.6V，200MHz主频，内置256KB Flash，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HC32F448基础功能使用">
+<meta property="og:url" content="https://baitang-hou.github.io/2024/07/04/HC32F448%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="革Mean君">
+<meta property="og:description" content="小华HC32F448基本使用方法及例程话不多说，本人的模板例程在这，开源自行下载： 链接：https:&#x2F;&#x2F;pan.baidu.com&#x2F;s&#x2F;1JSSa2bRqiioi4Yr8vWp28g?pwd&#x3D;r113提取码：r113 小华单片机是一款国产的32位微处理器，  ​	从他官网上看，这款单片机采用ARMCortex-M4内核，Vcc为1.8 ~ 3.6V，200MHz主频，内置256KB Flash，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041616430.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041618849.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041632058.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041634057.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041638783.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041640894.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041641972.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041644011.png">
+<meta property="og:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041713423.png">
+<meta property="article:published_time" content="2024-07-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-07-04T09:19:04.905Z">
+<meta property="article:author" content="Hou-baitang">
+<meta property="article:tag" content="i don t know">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041616430.png">
+
+<link rel="canonical" href="https://baitang-hou.github.io/2024/07/04/HC32F448%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>HC32F448基础功能使用 | 革Mean君</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">革Mean君</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">我的个人博客，用来记录学习过程以及心得等有意义的事情  有问题可以联系2914360094@qq.com</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">0</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">0</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">17</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://baitang-hou.github.io/2024/07/04/HC32F448%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/01.jpg">
+      <meta itemprop="name" content="Hou-baitang">
+      <meta itemprop="description" content="用于记录学习生活，成为一个自己想要成为的人">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="革Mean君">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HC32F448基础功能使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-07-04 00:00:00 / 修改时间：17:19:04" itemprop="dateCreated datePublished" datetime="2024-07-04T00:00:00+08:00">2024-07-04</time>
+            </span>
+
+          
+            <span id="/2024/07/04/HC32F448%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8/" class="post-meta-item leancloud_visitors" data-flag-title="HC32F448基础功能使用" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2024/07/04/HC32F448%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/07/04/HC32F448%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="小华HC32F448基本使用方法及例程"><a href="#小华HC32F448基本使用方法及例程" class="headerlink" title="小华HC32F448基本使用方法及例程"></a>小华HC32F448基本使用方法及例程</h1><p>话不多说，本人的模板例程在这，开源自行下载：</p>
+<p>链接：<a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1JSSa2bRqiioi4Yr8vWp28g?pwd=r113">https://pan.baidu.com/s/1JSSa2bRqiioi4Yr8vWp28g?pwd=r113</a><br>提取码：r113</p>
+<p>小华单片机是一款国产的32位微处理器，</p>
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041616430.png" alt="image-20240704161627332"></p>
+<p>​	从他官网上看，这款单片机采用ARMCortex-M4内核，Vcc为1.8 ~ 3.6V，200MHz主频，内置256KB Flash，68KB SRAM，内部集成PLL，3个12-bit 2.5MSPS SAR ADC，2<em>12-bit DAC，6</em>U(S)ART、3<em>SPI、2</em>I2C、2*CAN等外设，有QFN32&#x2F;QFN48&#x2F;LQFP48&#x2F;LQFP64&#x2F;LQFP80五种封装。</p>
+<p>横向对比他的HC32F460可以看到：</p>
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041618849.png" alt="image-20240704161823760"></p>
+<p>其他产品的优点这里不在赘述，详情参考官网<a target="_blank" rel="noopener" href="https://www.xhsc.com.cn/BGINews/info.aspx?itemid=8144">小华半导体有限公司 (xhsc.com.cn)</a></p>
+<p><font color=red>具体新建项目工程不在这里讲，可以参考这篇文章</font>[HC32F4A0PITB创建工程模板_hc32f4a0pitb软件创建-CSDN博客](<a target="_blank" rel="noopener" href="https://blog.csdn.net/honmy18/article/details/139503472?ops_request_misc=%7B%22request_id%22:%22172008141316800213047389%22,%22scm%22:%2220140713.130102334.pc_all.%22%7D&request_id=172008141316800213047389&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~first_rank_ecpm_v1~rank_v31_ecpm-2-139503472-null-null.142%5Ev100%5Epc_search_result_base3&utm_term=HC32F4">https://blog.csdn.net/honmy18/article/details/139503472?ops_request_misc=%7B%22request%5Fid%22%3A%22172008141316800213047389%22%2C%22scm%22%3A%2220140713.130102334.pc%5Fall.%22%7D&amp;request_id=172008141316800213047389&amp;biz_id=0&amp;utm_medium=distribute.pc_search_result.none-task-blog-2~all~first_rank_ecpm_v1~rank_v31_ecpm-2-139503472-null-null.142^v100^pc_search_result_base3&amp;utm_term=HC32F4</a> 新建&amp;spm&#x3D;1018.2226.3001.4187)</p>
+<p>本文章只对我自己的项目模板做讲解</p>
+<h2 id="1、GPIO输入输出"><a href="#1、GPIO输入输出" class="headerlink" title="1、GPIO输入输出"></a>1、GPIO输入输出</h2><p>源文件如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;GPIO.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * @brief  LED Init</span></span><br><span class="line"><span class="comment"> * @param  None</span></span><br><span class="line"><span class="comment"> * @retval None</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">My_GPIO_Init</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">stc_gpio_init_t</span> stcGpioInit;</span><br><span class="line"><span class="comment">//IO</span></span><br><span class="line">    (<span class="type">void</span>)GPIO_StructInit(&amp;stcGpioInit);</span><br><span class="line">    stcGpioInit.u16PinState = PIN_STAT_SET;</span><br><span class="line">    stcGpioInit.u16PinDir = PIN_DIR_OUT;</span><br><span class="line">    </span><br><span class="line">    (<span class="type">void</span>)GPIO_Init(LED_G_PORT, LED_G_PIN, &amp;stcGpioInit);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">//Key</span></span><br><span class="line">    (<span class="type">void</span>)GPIO_StructInit(&amp;stcGpioInit);</span><br><span class="line">    stcGpioInit.u16PinDir = PIN_DIR_IN;</span><br><span class="line">    stcGpioInit.u16PullUp=PIN_PU_ON;</span><br><span class="line">    </span><br><span class="line">    (<span class="type">void</span>)GPIO_Init(USER_PORT, USER_PIN, &amp;stcGpioInit);</span><br><span class="line">	</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>头文件如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifndef</span> __GPIO_H_</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> __GPIO_H_</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;hc32_ll.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;hc32_ll_gpio.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> LED_G_PORT          (GPIO_PORT_B)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> LED_G_PIN           (GPIO_PIN_05)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USER_PORT          (GPIO_PORT_D)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USER_PIN           (GPIO_PIN_02)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* LED toggle definition */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> LED_G_TOGGLE()      (GPIO_TogglePins(LED_G_PORT, LED_G_PIN))</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DLY_MS              (20000UL)</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">My_GPIO_Init</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<p>以上是配置GPIO的相关操作，包括了LED的闪灯以及按键的输入。详细的代码可以参考官方给的参考代码，虽然读起来很枯燥，但是这是开发一款新板子的必要步骤，或者就等着别人做好现成的拿去学。需要注意的是，在主函数中，因为使用了LL库，需要在初始化代码加上这段把初始化代码括起来:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">LL_PERIPH_WE(EXAMPLE_PERIPH_WE|LL_PERIPH_SEL);</span><br><span class="line"></span><br><span class="line"><span class="comment">//初始化代码</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Peripheral registers write protected */</span></span><br><span class="line">    LL_PERIPH_WP(EXAMPLE_PERIPH_WP|LL_PERIPH_SEL);</span><br></pre></td></tr></table></figure>
+
+<p>具体定义：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* unlock/lock peripheral */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> EXAMPLE_PERIPH_WE               (LL_PERIPH_GPIO | LL_PERIPH_EFM | LL_PERIPH_FCG | \</span></span><br><span class="line"><span class="meta">                                         LL_PERIPH_PWC_CLK_RMU | LL_PERIPH_SRAM)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> EXAMPLE_PERIPH_WP               (LL_PERIPH_EFM | LL_PERIPH_FCG | LL_PERIPH_SRAM)</span></span><br></pre></td></tr></table></figure>
+
+<p>这部分的话可以去参考官方的文档，当然，如果你出现了类似于这种的报错的话：</p>
+<figure class="highlight tex"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(165): error:  <span class="params">#2</span>0: identifier &quot;stc<span class="built_in">_</span>tmr0<span class="built_in">_</span>init<span class="built_in">_</span>t&quot; is undefined</span><br><span class="line">      stc<span class="built_in">_</span>tmr0<span class="built_in">_</span>init<span class="built_in">_</span>t stcTmr0Init;</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(173): warning:  <span class="params">#2</span>23-D: function &quot;TMR0<span class="built_in">_</span>StructInit&quot; declared implicitly</span><br><span class="line">      (void)TMR0<span class="built_in">_</span>StructInit(<span class="built_in">&amp;</span>stcTmr0Init);</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(174): error:  <span class="params">#2</span>0: identifier &quot;TMR0<span class="built_in">_</span>CLK<span class="built_in">_</span>SRC<span class="built_in">_</span>XTAL32&quot; is undefined</span><br><span class="line">      stcTmr0Init.u32ClockSrc     = TMR0<span class="built_in">_</span>CLK<span class="built_in">_</span>SRC<span class="built_in">_</span>XTAL32;</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(175): error:  <span class="params">#2</span>0: identifier &quot;TMR0<span class="built_in">_</span>CLK<span class="built_in">_</span>DIV2&quot; is undefined</span><br><span class="line">      stcTmr0Init.u32ClockDiv     = TMR0<span class="built_in">_</span>CLK<span class="built_in">_</span>DIV2;</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(176): error:  <span class="params">#2</span>0: identifier &quot;TMR0<span class="built_in">_</span>FUNC<span class="built_in">_</span>CMP&quot; is undefined</span><br><span class="line">      stcTmr0Init.u32Func         = TMR0<span class="built_in">_</span>FUNC<span class="built_in">_</span>CMP;</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(178): warning:  <span class="params">#2</span>23-D: function &quot;TMR0<span class="built_in">_</span>Init&quot; declared implicitly</span><br><span class="line">      (void)TMR0<span class="built_in">_</span>Init(TMR0<span class="built_in">_</span>UNIT, TMR0<span class="built_in">_</span>CH, <span class="built_in">&amp;</span>stcTmr0Init);</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(178): error:  <span class="params">#2</span>0: identifier &quot;TMR0<span class="built_in">_</span>CH<span class="built_in">_</span>B&quot; is undefined</span><br><span class="line">      (void)TMR0<span class="built_in">_</span>Init(TMR0<span class="built_in">_</span>UNIT, TMR0<span class="built_in">_</span>CH, <span class="built_in">&amp;</span>stcTmr0Init);</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(181): warning:  <span class="params">#2</span>23-D: function &quot;TMR0<span class="built_in">_</span>HWStopCondCmd&quot; declared implicitly</span><br><span class="line">      TMR0<span class="built_in">_</span>HWStopCondCmd(TMR0<span class="built_in">_</span>UNIT, TMR0<span class="built_in">_</span>CH, ENABLE);</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(184): warning:  <span class="params">#2</span>23-D: function &quot;TMR0<span class="built_in">_</span>IntCmd&quot; declared implicitly</span><br><span class="line">      TMR0<span class="built_in">_</span>IntCmd(TMR0<span class="built_in">_</span>UNIT, TMR0<span class="built_in">_</span>CH<span class="built_in">_</span>INT, ENABLE);</span><br><span class="line">..<span class="keyword">\source</span><span class="keyword">\main</span>.c(184): error:  <span class="params">#2</span>0: identifier &quot;TMR0<span class="built_in">_</span>INT<span class="built_in">_</span>CMP<span class="built_in">_</span>B&quot; is undefined</span><br><span class="line">      TMR0<span class="built_in">_</span>IntCmd(TMR0<span class="built_in">_</span>UNIT, TMR0<span class="built_in">_</span>CH<span class="built_in">_</span>INT, ENABLE);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041632058.png" alt="image-20240704163252988"></p>
+<p>大概率是在 hc32f4xx_conf.h 中没有开启所对应的功能导致的：</p>
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041634057.png" alt="image-20240704163400990"></p>
+<p>把这个OFF改成ON，再结合一下官方的代码就可以正常编译运行了。</p>
+<h2 id="2、定时器相关"><a href="#2、定时器相关" class="headerlink" title="2、定时器相关"></a>2、定时器相关</h2><p>定时器作为一款单片机的心脏，发挥着很重要的作用，对于这款单片机来说，具体代码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* TMR0 unit and channel definition */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_UNIT                       (CM_TMR0_1)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_CLK                        (FCG2_PERIPH_TMR0_1)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_CH                         (TMR0_CH_B)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_TRIG_CH                    (AOS_TMR0)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_CH_INT                     (TMR0_INT_CMP_B)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_CH_FLAG                    (TMR0_FLAG_CMP_B)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_INT_SRC                    (INT_SRC_TMR0_1_CMP_B)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_IRQn                       (INT006_IRQn)</span></span><br><span class="line"><span class="comment">/* Period = 1 / (Clock freq / div) * (Compare value + 1) = 500ms */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TMR0_CMP_VALUE                  (XTAL32_VALUE / 16U / 2U - 1U)</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>其中，这句话：</p>
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041638783.png" alt="image-20240704163800727"></p>
+<p>是使用外部晶振的时候需要，内部时钟的话直接在初始化里面分频就可以得到自己想要的时间周期。（本开发板的外部晶振时钟频率为8MHz）</p>
+<p>具体代码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * @brief  Configure TMR0.</span></span><br><span class="line"><span class="comment"> * @note   In asynchronous clock, If you want to write a TMR0 register, you need to wait for</span></span><br><span class="line"><span class="comment"> *         at least 3 asynchronous clock cycles after the last write operation!</span></span><br><span class="line"><span class="comment"> * @param  None</span></span><br><span class="line"><span class="comment"> * @retval None</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">TMR0_Config</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">stc_tmr0_init_t</span> stcTmr0Init;</span><br><span class="line">    <span class="type">stc_irq_signin_config_t</span> stcIrqSignConfig;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Enable timer0 and AOS clock */</span></span><br><span class="line">    FCG_Fcg2PeriphClockCmd(TMR0_CLK, ENABLE);</span><br><span class="line">    FCG_Fcg0PeriphClockCmd(FCG0_PERIPH_AOS, ENABLE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* TIMER0 configuration */</span></span><br><span class="line">    (<span class="type">void</span>)TMR0_StructInit(&amp;stcTmr0Init);</span><br><span class="line">    stcTmr0Init.u32ClockSrc     = TMR0_CLK_SRC_XTAL32;</span><br><span class="line">    stcTmr0Init.u32ClockDiv     = TMR0_CLK_DIV2;</span><br><span class="line">    stcTmr0Init.u32Func         = TMR0_FUNC_CMP;</span><br><span class="line">    stcTmr0Init.u16CompareValue = (<span class="type">uint16_t</span>)TMR0_CMP_VALUE;</span><br><span class="line">    (<span class="type">void</span>)TMR0_Init(TMR0_UNIT, TMR0_CH, &amp;stcTmr0Init);</span><br><span class="line">    <span class="comment">/* Asynchronous clock source, writing to TMR0 register requires waiting for three asynchronous clocks. */</span></span><br><span class="line">    DDL_DelayMS(<span class="number">1000U</span>);</span><br><span class="line">    TMR0_HWStopCondCmd(TMR0_UNIT, TMR0_CH, ENABLE);</span><br><span class="line">    <span class="comment">/* Asynchronous clock source, writing to TMR0 register requires waiting for three asynchronous clocks. */</span></span><br><span class="line">    DDL_DelayMS(<span class="number">1000U</span>);</span><br><span class="line">    TMR0_IntCmd(TMR0_UNIT, TMR0_CH_INT, ENABLE);</span><br><span class="line">    <span class="comment">// /* Asynchronous clock source, writing to TMR0 register requires waiting for three asynchronous clocks. */</span></span><br><span class="line">    DDL_DelayMS(<span class="number">1000U</span>);</span><br><span class="line">    AOS_SetTriggerEventSrc(TMR0_TRIG_CH, BSP_KEY_KEY5_EVT);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Interrupt configuration */</span></span><br><span class="line">    stcIrqSignConfig.enIntSrc    = TMR0_INT_SRC;</span><br><span class="line">    stcIrqSignConfig.enIRQn      = TMR0_IRQn;</span><br><span class="line">    stcIrqSignConfig.pfnCallback = &amp;TMR0_CompareIrqCallback;</span><br><span class="line">    (<span class="type">void</span>)INTC_IrqSignIn(&amp;stcIrqSignConfig);</span><br><span class="line">    NVIC_ClearPendingIRQ(stcIrqSignConfig.enIRQn);</span><br><span class="line">    NVIC_SetPriority(stcIrqSignConfig.enIRQn, DDL_IRQ_PRIO_DEFAULT);</span><br><span class="line">    NVIC_EnableIRQ(stcIrqSignConfig.enIRQn);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * @brief  Configure XTAL32.</span></span><br><span class="line"><span class="comment"> * @param  None</span></span><br><span class="line"><span class="comment"> * @retval None</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">XTAL32_Config</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">stc_clock_xtal32_init_t</span> stcXtal32Init;</span><br><span class="line"></span><br><span class="line">    (<span class="type">void</span>)CLK_Xtal32StructInit(&amp;stcXtal32Init);</span><br><span class="line">    <span class="comment">/* Configure Xtal32 */</span></span><br><span class="line">    stcXtal32Init.u8State   = CLK_XTAL32_ON;</span><br><span class="line">    stcXtal32Init.u8Drv     = CLK_XTAL32_DRV_MID;</span><br><span class="line">    stcXtal32Init.u8Filter  = CLK_XTAL32_FILTER_OFF;</span><br><span class="line"></span><br><span class="line">    GPIO_AnalogCmd(BSP_XTAL32_PORT, BSP_XTAL32_IN_PIN | BSP_XTAL32_OUT_PIN, ENABLE);</span><br><span class="line">    (<span class="type">void</span>)CLK_Xtal32Init(&amp;stcXtal32Init);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041640894.png" alt="image-20240704164007840"></p>
+<p>这块代码是为了使用外部晶振写的初始化代码，使用内部晶振的话不用考虑。其中，初始化的代码当中，这部分很重要：</p>
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041641972.png" alt="image-20240704164136910"></p>
+<p>第一个参数是你使用的始终源，最后一个参数是比较值，也就是算周期要用的值，上面define过。</p>
+<p>需要特别注意的是：<font color=red>当你使用外部晶振时，在异步时钟下，必须保证所选的异步时钟开启；否则TMR0将不会计数，配置也不一定准确。异步时钟下，对TMR0寄存器操作需要3个异步时钟才能写入。</font>因此，代码这部分的延时是充分考虑到这个因素：</p>
+<img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041644011.png" style="zoom:50%;" />
+
+<p>我只能说，这种初始化延时的不确定因素真的会在很关键的时候要你的命。原因可能是内核，反正我见过好多国产的单片机都有这个通病，很离谱。</p>
+<h2 id="3、U-S-ART相关"><a href="#3、U-S-ART相关" class="headerlink" title="3、U(S)ART相关"></a>3、U(S)ART相关</h2><p>相关define如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* USART RX/TX pin definition */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_RX_PORT                   (GPIO_PORT_C)   <span class="comment">/* PC11: USART2_RX */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_RX_PIN                    (GPIO_PIN_11)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_RX_GPIO_FUNC              (GPIO_FUNC_37)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_TX_PORT                   (GPIO_PORT_C)   <span class="comment">/* PC10: USART2_TX */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_TX_PIN                    (GPIO_PIN_10)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_TX_GPIO_FUNC              (GPIO_FUNC_36)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* USART unit definition */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_UNIT                      (CM_USART2)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_FCG_ENABLE()              (FCG_Fcg3PeriphClockCmd(FCG3_PERIPH_USART2, ENABLE))</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* USART interrupt definition */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_RX_ERR_IRQn               (INT000_IRQn)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> USART_RX_ERR_INT_SRC            (INT_SRC_USART2_EI)</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>主函数初始化时要加上这句：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BSP_CLK_Init();<span class="comment">//务必保留</span></span><br></pre></td></tr></table></figure>
+
+<p>之后就是正常的初始化程序：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Configure USART RX/TX pin. */</span></span><br><span class="line">    GPIO_SetFunc(USART_RX_PORT, USART_RX_PIN, USART_RX_GPIO_FUNC);</span><br><span class="line">    GPIO_SetFunc(USART_TX_PORT, USART_TX_PIN, USART_TX_GPIO_FUNC);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Enable peripheral clock */</span></span><br><span class="line">    USART_FCG_ENABLE();</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Initialize UART. */</span></span><br><span class="line">    (<span class="type">void</span>)USART_UART_StructInit(&amp;stcUartInit);</span><br><span class="line">    stcUartInit.u32ClockDiv = USART_CLK_DIV64;</span><br><span class="line">    stcUartInit.u32Baudrate = <span class="number">115200UL</span>;</span><br><span class="line">    stcUartInit.u32OverSampleBit = USART_OVER_SAMPLE_8BIT;</span><br><span class="line">    <span class="keyword">if</span> (LL_OK != USART_UART_Init(USART_UNIT, &amp;stcUartInit, <span class="literal">NULL</span>)) &#123;</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/* Register error IRQ handler &amp;&amp; configure NVIC. */</span></span><br><span class="line">    stcIrqSigninConfig.enIRQn = USART_RX_ERR_IRQn;</span><br><span class="line">    stcIrqSigninConfig.enIntSrc = USART_RX_ERR_INT_SRC;</span><br><span class="line">    stcIrqSigninConfig.pfnCallback = &amp;USART_RxError_IrqCallback;</span><br><span class="line">    (<span class="type">void</span>)INTC_IrqSignIn(&amp;stcIrqSigninConfig);</span><br><span class="line">    NVIC_ClearPendingIRQ(stcIrqSigninConfig.enIRQn);</span><br><span class="line">    NVIC_SetPriority(stcIrqSigninConfig.enIRQn, DDL_IRQ_PRIO_DEFAULT);</span><br><span class="line">    NVIC_EnableIRQ(stcIrqSigninConfig.enIRQn);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Peripheral registers write protected */</span></span><br><span class="line">    LL_PERIPH_WP(EXAMPLE_PERIPH_WP|LL_PERIPH_SEL);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Enable RX/TX function */</span></span><br><span class="line">    USART_FuncCmd(USART_UNIT, (USART_RX | USART_INT_RX | USART_TX), ENABLE);</span><br></pre></td></tr></table></figure>
+
+<p>我在定时器里面做了收发的相关操作：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">if</span> (MASTER_DEVICE_ENABLE == DDL_ON)</span></span><br><span class="line">    USART_WriteData(USART_UNIT, <span class="number">0x0A</span>);</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">    <span class="keyword">if</span> (SET == USART_GetStatus(USART_UNIT, USART_FLAG_RX_FULL)) &#123;</span><br><span class="line">            flag = USART_ReadData(USART_UNIT);</span><br><span class="line">            <span class="keyword">while</span> (RESET == USART_GetStatus(USART_UNIT, USART_FLAG_TX_EMPTY));</span><br><span class="line">            <span class="keyword">if</span>(flag==<span class="number">0x0A</span>)LED_G_TOGGLE();</span><br><span class="line">            <span class="keyword">else</span> GPIO_ResetPins(LED_G_PORT, LED_G_PIN);</span><br><span class="line">            USART_WriteData(USART_UNIT, flag);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<p>主要设置了主从机的相关代码，只需要改预编译的define就行。内容就是一个主机发特定字符，另一个从机接受后判断是否为这个字符后进行GPIO反转电平的操作实现LED闪灯。</p>
+<p><img src="https://gitee.com/hou-baitang/imgs/raw/master/img/202407041713423.png" alt="image-20240704171302356"></p>
+<p>这部分代码是设置波特率等相关寄存器的操作。</p>
+<p>总的来说，如果你有单片机开发的基础的话，不用担心会有多难，只不过是时间问题。其他功能的话还有待开发，等用到的时候再写吧。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>如果觉得有帮助的话可以对我进行打赏哦~</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/weichat.jpg" alt="Hou-baitang 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="Hou-baitang 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/20/%E4%BB%80%E4%B9%88%E6%98%AFCAN%E6%80%BB%E7%BA%BF%EF%BC%9F/" rel="prev" title="CAN总线解读">
+      <i class="fa fa-chevron-left"></i> CAN总线解读
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/07/04/LoRa%E6%8A%80%E6%9C%AF%EF%BC%9A%E4%BD%8E%E5%8A%9F%E8%80%97%E5%B9%BF%E5%9F%9F%E7%BD%91%E7%9A%84%E6%9C%AA%E6%9D%A5/" rel="next" title="LoRa技术：低功耗广域网的未来">
+      LoRa技术：低功耗广域网的未来 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B0%8F%E5%8D%8EHC32F448%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95%E5%8F%8A%E4%BE%8B%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">小华HC32F448基本使用方法及例程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81GPIO%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA"><span class="nav-number">1.1.</span> <span class="nav-text">1、GPIO输入输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81%E5%AE%9A%E6%97%B6%E5%99%A8%E7%9B%B8%E5%85%B3"><span class="nav-number">1.2.</span> <span class="nav-text">2、定时器相关</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81U-S-ART%E7%9B%B8%E5%85%B3"><span class="nav-number">1.3.</span> <span class="nav-text">3、U(S)ART相关</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hou-baitang"
+      src="/images/01.jpg">
+  <p class="site-author-name" itemprop="name">Hou-baitang</p>
+  <div class="site-description" itemprop="description">用于记录学习生活，成为一个自己想要成为的人</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/2914360094@qq.com" title="E-Mail → 2914360094@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hou-baitang</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+    <script defer src="/lib/three/three-waves.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'CHrcBwX6gcXANbBEKYs61u5W-gzGzoHsz',
+      appKey     : 'vWEYMt0YeFAFL8Xp2TDI0Lhn',
+      placeholder: "快来评论叭~~",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : true,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
