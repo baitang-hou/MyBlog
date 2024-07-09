@@ -135,7 +135,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">17</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">18</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -188,6 +188,97 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://baitang-hou.github.io/2022/07/06/Simulink%E7%94%9F%E6%88%90ROS%E4%BB%A3%E7%A0%81%E5%B9%B6%E6%BC%94%E7%A4%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/01.jpg">
+      <meta itemprop="name" content="Hou-baitang">
+      <meta itemprop="description" content="用于记录学习生活，成为一个自己想要成为的人">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="不硬核硕士小侯">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/07/06/Simulink%E7%94%9F%E6%88%90ROS%E4%BB%A3%E7%A0%81%E5%B9%B6%E6%BC%94%E7%A4%BA/" class="post-title-link" itemprop="url">Simulink生成ROS代码并演示</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-07-06 00:00:00 / 修改时间：19:41:16" itemprop="dateCreated datePublished" datetime="2022-07-06T00:00:00+08:00">2022-07-06</time>
+            </span>
+
+          
+            <span id="/2022/07/06/Simulink%E7%94%9F%E6%88%90ROS%E4%BB%A3%E7%A0%81%E5%B9%B6%E6%BC%94%E7%A4%BA/" class="post-meta-item leancloud_visitors" data-flag-title="Simulink生成ROS代码并演示" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/07/06/Simulink%E7%94%9F%E6%88%90ROS%E4%BB%A3%E7%A0%81%E5%B9%B6%E6%BC%94%E7%A4%BA/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/07/06/Simulink%E7%94%9F%E6%88%90ROS%E4%BB%A3%E7%A0%81%E5%B9%B6%E6%BC%94%E7%A4%BA/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>首先是在Linux下载matlab，我的系统是Ubuntu20.04，<a target="_blank" rel="noopener" href="https://blog.csdn.net/hanjuefu5827/article/details/115167728">参考这篇文章</a>安装的Matlab2021b，具体安装过程比较简单，我就不在赘述了。下面是我的学习过程（以自带的小海龟为例）：<br>首先查看本机的IP地址：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ifconfig</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/f8545118ad34491e8f3f7b3e9c22e504.png" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/6c98187a92ca4802943fdace259850e2.png" alt="请添加图片描述"><br>我的地址为192.168.0.111，把这个地址在&#x3D;&#x3D;.bashrc&#x3D;&#x3D;文件中引入，意思是让你的引入ROS的IP：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export ROS_IP=你的IP地址</span><br></pre></td></tr></table></figure>
+<p>然后就是打开Simulink，&#x3D;&#x3D;切记接下来你创建的文件都要在matlab打开的工作空间内！！！&#x3D;&#x3D;<br>接下来就是配置Matlab的ROS环境：<br>1,打开roscore查看ROS_MASTER_URI:<br><img src="https://img-blog.csdnimg.cn/125a3a26b01d4ae2b37c29aeebfd1ddd.png" alt="请添加图片描述"><br>2,在Matlab中设置环境并且初始化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">setenv(&#x27;ROS_MASTER_URI&#x27;,&#x27;http://192.168.0.111:11311&#x27;)</span><br><span class="line">rosinit</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/08ef32f5e8204b78a85b88b9fe36d337.png" alt="请添加图片描述"><br>接下来检查ROS和Matlab的链接：<br>1,启动turtlesim和键盘控制节点:<br><img src="https://img-blog.csdnimg.cn/ae8b5f27a9ed4593bd4e4171bd07a0a3.png" alt="请添加图片描述"><br>2,查看运动节点：<br><img src="https://img-blog.csdnimg.cn/050bb251d7054833a4d8a933cd890746.png" alt="请添加图片描述"><br>我们知道，控制小乌龟物理学运动的节点是cmd_vel这个节点。<br>3，打开Simulink创建一个空白模型：<br>用ROS里面的subscriber来查看链接是否正常<br><img src="https://img-blog.csdnimg.cn/a40136e212624ccfb4789b89446723f4.png" alt="请添加图片描述"><br>为了方便显示，我加了几个示波器来看一下运动波形。<br>subscriber要链接cmd_vel节点：<br><img src="https://img-blog.csdnimg.cn/6b9a46429b4e470dae7ad0ddcb235d6a.png" alt="请添加图片描述"><br>上面接口接终端，下面的接口直接解析就行：<br><img src="https://img-blog.csdnimg.cn/f5a4119c32b543be94a1d652b6ac06f6.png" alt="请添加图片描述"><br>接下来就是将运行时间改为inf：<br><img src="https://img-blog.csdnimg.cn/0d471ddf2a0e44c3930d0b60a4cce370.png" alt="请添加图片描述"></p>
+<p>那么准备工作做完，运行之后随便打开一个示波器，接下来控制小海龟随便运动一下：<br><img src="https://img-blog.csdnimg.cn/52f89e686c4d48828a936759d4468e2f.png" alt="请添加图片描述"><br>接下来将示波器停止，缩放一下XY轴看到这样就说明链接是没有问题的：<br><img src="https://img-blog.csdnimg.cn/72cdfead8b374deeb19c71165c919c73.png" alt="请添加图片描述"><br>准备工作做完，接下来就可以使用Simulink生成ros代码了，具体操作如下：<br>因为输出的运动学数值均为Twist类型的：<br><img src="https://img-blog.csdnimg.cn/b5684d39ca2c4d268adff2c56da903a2.png" alt="请添加图片描述"><br>所以，在simulink中，我们新建一个模板：<br><img src="https://img-blog.csdnimg.cn/80eb421d5f7c41ada9ac49af6980b66b.png" alt="请添加图片描述"><br>使用空白消息订阅Twist，采样周期依旧是inf。<br>接口接出来接到一个publisher上，首先得将数据解析，使用bus assignment解析：<br><img src="https://img-blog.csdnimg.cn/25361fd123ad459cae3e713f16cd594e.png" alt="请添加图片描述"></p>
+<p>将解析出来的数据接到publisher上，并且订阅的还是cmd_vel：<br><img src="https://img-blog.csdnimg.cn/3b9c7478877e4501a9893d39da5b88d3.png" alt="请添加图片描述"></p>
+<p>对于输入的Bus，由于我想要小海龟做圆周运动，所以对输入进行赋值操作，给x和z一个数值正好就是做圆周运动：<br><img src="https://img-blog.csdnimg.cn/da4f5846e8514c59b9a0a8355d4731d6.png" alt="请添加图片描述"><br>运行脚本可以看到小海龟是做圆周运动的，说明我们的操作都正常，可以将这些输出成代码。<br>最后就是将输出进行配置：<br>在设置中配置Hardware为ROS：<br><img src="https://img-blog.csdnimg.cn/699e032161d044faa5655cd6f5cc2e6f.png" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/e72695810d45413f8a6c3380143e7352.png" alt="请添加图片描述"><br><img src="https://img-blog.csdnimg.cn/aa2d3bd0041045dc9a8f3f5128c7f112.png" alt="请添加图片描述"><br>配置好之后就可以编译文件了：<br><img src="https://img-blog.csdnimg.cn/b6c2ba6755c3407da97a738f24d4771e.png" alt="请添加图片描述"><br>接下来不出意外没有报错的话会在你的工作空间内生成两个文件：<br><img src="https://img-blog.csdnimg.cn/d34bb783a82b4166a69ac20bbb4d3b7f.png" alt="请添加图片描述"><br>将这两个文件编译到你的ROS工作空间内：<br><img src="https://img-blog.csdnimg.cn/38201ab42c93421f8e868b4a78497cc2.png" alt="请添加图片描述"><br>编译成功后在你的ROS工作空间内就会生成一个以你simulink文件为名字的文件夹：<br><img src="https://img-blog.csdnimg.cn/7e38fdc6773046cc8bf85f1c56addea6.png" alt="请添加图片描述"><br>接下来编译catkin_make生成执行文件：<br><img src="https://img-blog.csdnimg.cn/aa7345c760ac4621bce1a0ec8f2d39fc.png" alt="请添加图片描述"></p>
+<p>运行生成的那个文件，你的小乌龟就可以动起来了：<br><img src="https://img-blog.csdnimg.cn/b5db4a0c030b488d9f3785739d0d0fb2.png" alt="请添加图片描述"><br>为了对比之前调试的时候的位置，我手动调整了一下小乌龟的位置，现在形成了对比，可以看到用simulink生成ros的代码可以完美运行！<br>到这里最基本的内容就已经完成了，后续开发还是得下功夫多研究~~</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1d7411y7WY?spm_id_from=333.788.top_right_bar_window_history.content.click">参考视频</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1126,7 +1217,7 @@ source ~/.bashrc
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-count">18</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
